@@ -1,3 +1,5 @@
+#pragma once
+
 inline constexpr char TITLE[]{"Abhay's Path Tracer"};
 
 inline constexpr auto WIDTH{1280};
