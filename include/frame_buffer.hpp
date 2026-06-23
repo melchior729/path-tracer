@@ -5,8 +5,6 @@
 #include <array>
 
 struct FrameBuffer {
-  std::array<Color, WIDTH * HEIGHT> pixels{};
-
   constexpr FrameBuffer() { clear(); }
 
   constexpr void set(std::size_t i, Color color) {
@@ -30,4 +28,7 @@ struct FrameBuffer {
   constexpr bool in_bounds(std::size_t i) const {
     return (i >= 0 && i < WIDTH * HEIGHT);
   }
+
+private:
+  std::array<Color, WIDTH * HEIGHT> pixels{};
 };
