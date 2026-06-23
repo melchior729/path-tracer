@@ -25,9 +25,7 @@ struct FrameBuffer {
 
   constexpr void clear() { pixels.fill(BLACK); }
 
-  constexpr bool in_bounds(std::size_t i) const {
-    return (i >= 0 && i < WIDTH * HEIGHT);
-  }
+  constexpr bool in_bounds(std::size_t i) const { return i < WIDTH * HEIGHT; }
 
 private:
   std::array<Color, WIDTH * HEIGHT> pixels{};
