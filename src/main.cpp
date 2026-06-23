@@ -59,7 +59,6 @@ SDL_AppResult SDL_AppEvent([[maybe_unused]] void *appstate, SDL_Event *event) {
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
   auto state{static_cast<AppState *>(appstate)};
-  state->buffer->clear();
 
   SDL_RenderPresent(state->renderer.get());
   return SDL_APP_CONTINUE;
