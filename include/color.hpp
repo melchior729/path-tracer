@@ -11,11 +11,11 @@ struct Color {
 
   constexpr operator uint32_t() const { return val; }
 
-  constexpr uint32_t a() const { return (val << 24) & 0xFF; };
+  constexpr uint32_t a() const { return (val >> 24) & 0xFF; };
 
-  constexpr uint32_t r() const { return (val << 16) & 0xFF; };
+  constexpr uint32_t r() const { return (val >> 16) & 0xFF; };
 
-  constexpr uint32_t g() const { return (val << 8) & 0xFF; };
+  constexpr uint32_t g() const { return (val >> 8) & 0xFF; };
 
   constexpr uint32_t b() const { return val & 0xFF; };
 };
