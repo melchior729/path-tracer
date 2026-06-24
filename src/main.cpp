@@ -7,6 +7,7 @@
 #include "frame_buffer.hpp"
 #include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_video.h>
+#include <cstring>
 #include <memory>
 
 struct SDL_Deleter {
@@ -37,7 +38,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
   }
 
   SDL_Texture *t{SDL_CreateTexture(r, SDL_PIXELFORMAT_ARGB8888,
-                                   SDL_TEXTUREACCESS_STATIC, WIDTH, HEIGHT)};
+                                   SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT)};
 
   SDL_SetRenderVSync(r, 0);
 
@@ -61,6 +62,16 @@ SDL_AppResult SDL_AppEvent([[maybe_unused]] void *appstate, SDL_Event *event) {
 SDL_AppResult SDL_AppIterate(void *appstate) {
   auto state{static_cast<AppState *>(appstate)};
 
+  void *pixels{};
+  int pitch{};
+
+  if (SDL_LockTexture(state->texture.get(), NULL, &pixels, &pitch)) {
+    std::memcpy(pixels, &state->buffer->pixels,
+                static_cast<size_t>(pitch) * HEIGHT);
+    SDL_UnlockTexture(state->texture.get());
+  }
+
+  SDL_RenderTexture(state->renderer.get(), state->texture.get(), NULL, NULL);
   SDL_RenderPresent(state->renderer.get());
   return SDL_APP_CONTINUE;
 }
