@@ -11,9 +11,9 @@ struct Camera {
   Point3 center{0, 0, 0};
   Point3 look_at{0, 0, -1};
 
-  Camera() { init(); }
+  constexpr Camera() { init(); }
 
-  void init() {
+  constexpr void init() {
     sample_scale = 1.0f / SAMPLE_COUNT;
 
     w = norm(center - look_at);
@@ -34,7 +34,7 @@ struct Camera {
     first_pixel = top_left + 0.5 * (delta_u + delta_v);
   }
 
-  Ray get_ray(const Vec3 &offset, size_t i, size_t j) const {
+  constexpr Ray get_ray(const Vec3 &offset, size_t i, size_t j) const {
     auto sample{first_pixel + ((i + offset.x()) * delta_u) +
                 ((j + offset.y()) * delta_v)};
     auto dir{sample - center};
