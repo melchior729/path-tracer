@@ -1,19 +1,17 @@
+#pragma once
+
 #include "config.hpp"
 #include "ray.hpp"
 #include "util.hpp"
 #include "vec3.hpp"
 
+static constexpr Vec3 up{0, 1, 0};
+
 struct Camera {
   Point3 center{0, 0, 0};
   Point3 look_at{0, 0, -1};
 
-private:
-  static constexpr Vec3 up{0, 1, 0};
-  Vec3 u, v, w;
-
-  Point3 first_pixel;
-  Vec3 delta_u, delta_v;
-  float sample_scale;
+  Camera() { init(); }
 
   void init() {
     sample_scale = 1.0f / SAMPLE_COUNT;
@@ -36,15 +34,16 @@ private:
     first_pixel = top_left + 0.5 * (delta_u + delta_v);
   }
 
-  Ray get_ray(size_t i, size_t j) {
-    auto offset{sample_square()};
+  Ray get_ray(const Vec3 &offset, size_t i, size_t j) const {
     auto sample{first_pixel + ((i + offset.x()) * delta_u) +
                 ((j + offset.y()) * delta_v)};
     auto dir{sample - center};
     return {center, dir};
   }
 
-  Vec3 sample_square() const {
-    return {random_float() - 0.5f, random_float() - 0.5f, 0};
-  }
+private:
+  Point3 first_pixel;
+  Vec3 u, v, w;
+  Vec3 delta_u, delta_v;
+  float sample_scale;
 };
