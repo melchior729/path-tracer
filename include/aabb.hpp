@@ -1,3 +1,5 @@
+#pragma once
+
 #include "interval.hpp"
 #include "ray.hpp"
 
