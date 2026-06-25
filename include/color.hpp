@@ -5,7 +5,7 @@
 struct Color {
   uint32_t val;
 
-  constexpr Color() : val(0xFFFFFFFF) {}
+  constexpr Color() : val(0xFF000000) {}
 
   constexpr Color(uint32_t v) : val(v) {}
 
