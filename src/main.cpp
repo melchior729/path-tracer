@@ -5,6 +5,8 @@
 #include "SDL3/SDL_render.h"
 #include "config.hpp"
 #include "frame_buffer.hpp"
+#include "render.hpp"
+#include "sphere_buffer.hpp"
 #include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_video.h>
 #include <cstring>
@@ -17,11 +19,18 @@ struct SDL_Deleter {
 };
 
 struct AppState {
-  std::unique_ptr<SDL_Window, SDL_Deleter> window{};
-  std::unique_ptr<SDL_Renderer, SDL_Deleter> renderer{};
-  std::unique_ptr<SDL_Texture, SDL_Deleter> texture{};
-  std::unique_ptr<FrameBuffer> buffer{};
+  std::unique_ptr<SDL_Window, SDL_Deleter> window;
+  std::unique_ptr<SDL_Renderer, SDL_Deleter> renderer;
+  std::unique_ptr<SDL_Texture, SDL_Deleter> texture;
+  std::unique_ptr<Camera> camera;
+  std::unique_ptr<SphereBuffer> spheres;
+  std::unique_ptr<FrameBuffer> buffer;
 };
+
+void add_scene_one(SphereBuffer &spheres) {
+  spheres.add(0.0f, 0.0f, -5.0f, 1.0f);
+  spheres.add(2.0f, -1.0f, -3.0f, 0.5f);
+}
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
                           [[maybe_unused]] char *argv[]) {
@@ -45,6 +54,11 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
   state->window.reset(w);
   state->renderer.reset(r);
   state->texture.reset(t);
+  state->camera = std::make_unique<Camera>();
+  state->spheres = std::make_unique<SphereBuffer>();
+
+  add_scene_one(*state->spheres);
+
   state->buffer = std::make_unique<FrameBuffer>();
 
   *appstate = state.release();
@@ -61,6 +75,7 @@ SDL_AppResult SDL_AppEvent([[maybe_unused]] void *appstate, SDL_Event *event) {
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
   auto state{static_cast<AppState *>(appstate)};
+  render(*state->camera, *state->spheres, *state->buffer);
 
   void *pixels{};
   int pitch{};
