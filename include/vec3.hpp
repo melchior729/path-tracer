@@ -10,6 +10,12 @@ struct Vec3 {
 
   constexpr Vec3(float x, float y, float z) : v{x, y, z} {}
 
+  constexpr float &x() { return v[0]; }
+
+  constexpr float &y() { return v[1]; }
+
+  constexpr float &z() { return v[2]; }
+
   constexpr float x() const { return v[0]; }
 
   constexpr float y() const { return v[1]; }
