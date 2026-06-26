@@ -11,4 +11,6 @@ inline constexpr auto ASPECT{static_cast<float>(WIDTH) / HEIGHT};
 inline constexpr auto FOV{90.0f};
 inline constexpr auto SAMPLE_COUNT{10};
 
+inline constexpr auto MAX_DEPTH{50};
+
 inline constexpr auto INFINITY{std::numeric_limits<float>::infinity()};
