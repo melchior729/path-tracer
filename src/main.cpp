@@ -1,3 +1,4 @@
+#include <SDL3/SDL_events.h>
 #define SDL_MAIN_USE_CALLBACKS 1
 
 #include "SDL3/SDL_init.h"
@@ -29,7 +30,6 @@ struct AppState {
 
 void add_scene_one(SphereBuffer &spheres) {
   spheres.add(0.0f, 0.0f, -5.0f, 1.0f);
-  spheres.add(2.0f, -1.0f, -3.0f, 0.5f);
 }
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
@@ -65,9 +65,29 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
   return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult SDL_AppEvent([[maybe_unused]] void *appstate, SDL_Event *event) {
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
+  auto state{static_cast<AppState *>(appstate)};
+
   if (event->type == SDL_EVENT_QUIT) {
     return SDL_APP_SUCCESS;
+  }
+
+  constexpr auto speed{0.2f};
+  if (event->type == SDL_EVENT_KEY_DOWN) {
+    switch (event->key.key) {
+    case SDLK_W:
+      state->camera->center.z() += speed;
+      break;
+    case SDLK_A:
+      state->camera->center.z() -= speed;
+      break;
+    case SDLK_S:
+      state->camera->center.x() -= speed;
+      break;
+    case SDLK_D:
+      state->camera->center.x() += speed;
+      break;
+    }
   }
 
   return SDL_APP_CONTINUE;
