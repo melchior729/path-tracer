@@ -78,14 +78,14 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     case SDLK_W:
       state->camera->center.z() += speed;
       break;
-    case SDLK_A:
+    case SDLK_S:
       state->camera->center.z() -= speed;
       break;
-    case SDLK_S:
-      state->camera->center.x() -= speed;
+    case SDLK_A:
+      state->camera->center.x() += speed;
       break;
     case SDLK_D:
-      state->camera->center.x() += speed;
+      state->camera->center.x() -= speed;
       break;
     }
   }
