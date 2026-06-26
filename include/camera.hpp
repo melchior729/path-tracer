@@ -25,7 +25,7 @@ struct Camera {
     auto vp_width{vp_height * ASPECT};
 
     auto vp_u{vp_width * u};
-    auto vp_v{vp_width * v};
+    auto vp_v{vp_height * v};
 
     delta_u = vp_u / WIDTH;
     delta_v = vp_v / HEIGHT;
