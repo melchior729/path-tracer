@@ -30,7 +30,7 @@ struct AABB {
     return (n == 1) ? y : (n == 2) ? z : x;
   }
 
-  constexpr bool hit(const Ray &ray, Interval interval) {
+  bool hit(const Ray &ray, Interval interval) {
     auto &origin{ray.origin()};
     auto &dir{ray.direction()};
 
