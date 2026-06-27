@@ -41,6 +41,20 @@ struct Camera {
     return {center, dir};
   }
 
+  constexpr void move_x(float x) { center.x() += x; }
+
+  constexpr void move_y(float y) { center.y() += y; }
+
+  constexpr void move_z(float z) { center.z() += z; }
+
+  constexpr void move(float x, float y, float z) {
+    this->move_x(x);
+    this->move_y(y);
+    this->move_z(z);
+  }
+
+  constexpr void move(const Vec3 &v) { this->move(v.x(), v.y(), v.z()); }
+
 private:
   Point3 first_pixel;
   Vec3 u, v, w;
