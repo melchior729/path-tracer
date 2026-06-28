@@ -18,7 +18,7 @@ struct Camera {
 
     w = norm(center - look_at);
     u = norm(up.cross(w));
-    v = norm(w.cross(u));
+    v = norm(u.cross(w));
 
     auto focal_len{(look_at - center).len()};
     auto vp_height{2 * std::tan(deg_to_rad(FOV) / 2) * focal_len};
