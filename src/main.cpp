@@ -103,16 +103,16 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
   if (event->type == SDL_EVENT_KEY_DOWN) {
     switch (event->key.key) {
     case SDLK_W:
-      state->camera->move_z(speed);
-      break;
-    case SDLK_S:
       state->camera->move_z(-speed);
       break;
+    case SDLK_S:
+      state->camera->move_z(speed);
+      break;
     case SDLK_A:
-      state->camera->move_x(speed);
+      state->camera->move_x(-speed);
       break;
     case SDLK_D:
-      state->camera->move_x(-speed);
+      state->camera->move_x(speed);
       break;
     case SDLK_R:
       state->camera->move_y(speed);
@@ -121,6 +121,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
       state->camera->move_y(-speed);
       break;
     }
+    state->camera->init();
   }
 
   return SDL_APP_CONTINUE;
