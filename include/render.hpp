@@ -10,52 +10,59 @@
 #include "sphere_buffer.hpp"
 #include "util.hpp"
 #include "vec3.hpp"
+#include <cassert>
 #include <cmath>
 
 static Vec3 sample_square() {
   return {random_float() - 0.5f, random_float() - 0.5f, 0};
 }
 
-static Vec3 ray_color(const Ray &ray, const SphereBuffer &spheres,
-                      const std::vector<Material> &materials, int depth) {
-  if (depth <= 0) {
-    return {};
-  }
+static Vec3 mix_with_sky(const Ray &ray, const Vec3 &attenuation) {
+  auto dir{norm(ray.direction())};
+  auto a{0.5 * (dir.y() + 1.0f)};
+  auto sky_val{(1.0f - a) * WHITE + a * SKY_BLUE};
+  return attenuation * sky_val;
+}
 
-  HitRecord record;
-  if (hit_spheres(spheres, ray, Interval{0.001, INFINITY}, record)) {
+static Vec3 ray_color(const Ray &ray, const SphereBuffer &spheres,
+                      const std::vector<Material> &materials, size_t depth) {
+  Ray incoming{ray};
+  Vec3 acc_attenuation{WHITE};
+
+  for (size_t i{}; i < depth; ++i) {
+    HitRecord record;
+    if (!hit_spheres(spheres, incoming, Interval{0.001, INFINITY}, record)) {
+      return mix_with_sky(incoming, acc_attenuation);
+    }
+
     Ray scattered;
     Vec3 attenuation;
-
     auto material{materials[record.mat_idx]};
+
     switch (material.type) {
     case MaterialType::Lambertian:
-      if (material.lambertian.scatter(record, attenuation, scattered)) {
-        return attenuation *
-               ray_color(scattered, spheres, materials, depth - 1);
-      }
+      material.lambertian.scatter(record, attenuation, scattered);
       break;
-
     case MaterialType::Metal:
-      if (material.metal.scatter(ray, record, attenuation, scattered)) {
-        return attenuation *
-               ray_color(scattered, spheres, materials, depth - 1);
+      if (!material.metal.scatter(incoming, record, attenuation, scattered)) {
+        return mix_with_sky(incoming, acc_attenuation);
       }
       break;
-
     case MaterialType::Dielectric:
-      if (material.dielectric.scatter(ray, record, attenuation, scattered)) {
-        return attenuation *
-               ray_color(scattered, spheres, materials, depth - 1);
+      if (!material.dielectric.scatter(incoming, record, attenuation,
+                                       scattered)) {
+        return mix_with_sky(incoming, acc_attenuation);
       }
-
       break;
+    default:
+      assert(false);
     }
+
+    incoming = scattered;
+    acc_attenuation *= attenuation;
   }
 
-  auto dir{norm(ray.direction())};
-  auto a{0.5f * (dir.y() + 1.0f)};
-  return (1.0f - a) * WHITE + a * SKY_BLUE;
+  return {};
 }
 
 static float gamma(float v) { return v > 0 ? std::sqrt(v) : 0; }
