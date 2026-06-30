@@ -42,6 +42,13 @@ struct Vec3 {
     return *this;
   }
 
+  constexpr Vec3 &operator*=(const Vec3 &o) {
+    v[0] *= o.v[0];
+    v[1] *= o.v[1];
+    v[2] *= o.v[2];
+    return *this;
+  }
+
   constexpr Vec3 &operator*=(float t) {
     v[0] *= t;
     v[1] *= t;
