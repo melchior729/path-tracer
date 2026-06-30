@@ -10,7 +10,7 @@ enum struct MaterialType { Lambertian, Metal, Dielectric };
 struct Lambertian {
   Vec3 albedo;
 
-  bool scatter(const HitRecord &record, Vec3 &attenuation, Ray &out) {
+  void scatter(const HitRecord &record, Vec3 &attenuation, Ray &out) {
     auto dir{record.normal + random_norm()};
     if (dir.near_zero()) {
       dir = record.normal;
@@ -18,7 +18,6 @@ struct Lambertian {
 
     out = {record.p, dir};
     attenuation = albedo;
-    return true;
   };
 };
 
@@ -31,8 +30,12 @@ struct Metal {
     auto dir{reflect(in.direction(), record.normal)};
     dir = norm(dir) + fuzz * random_norm();
     out = {record.p, dir};
-    attenuation = albedo;
-    return dot(dir, record.normal) > 0;
+    if (dot(dir, record.normal) > 0) {
+      attenuation = albedo;
+      return true;
+    }
+
+    return false;
   };
 };
 
