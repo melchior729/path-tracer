@@ -80,7 +80,7 @@ static Vec3 gamma_vec(const Vec3 &v) {
   return {r_byte, g_byte, b_byte};
 }
 
-inline void render_cpu(const Camera &camera, const SphereBuffer &spheres,
+inline void cpu_render(const Camera &camera, const SphereBuffer &spheres,
                        const std::vector<Material> &materials,
                        FrameBuffer &buffer) {
   for (size_t j{}; j < HEIGHT; ++j) {
@@ -97,8 +97,3 @@ inline void render_cpu(const Camera &camera, const SphereBuffer &spheres,
     }
   }
 }
-
-void rng_init(curandState *state, size_t seed);
-
-void render(const Camera *camera, const SphereBuffer *spheres,
-            const Material *materials, FrameBuffer *buffer, size_t buff_size);

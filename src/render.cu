@@ -6,7 +6,7 @@
 #include "vec3.hpp"
 #include <curand_kernel.h>
 
-__global__ void rng_init(curandState *state, size_t seed) {
+__global__ void cuda_rng_init(curandState *state, size_t seed) {
   size_t i{blockDim.x * blockIdx.x + threadIdx.x};
   curand_init(seed, i, 0, &state[i]);
 }
@@ -37,9 +37,9 @@ __device__ static Vec3 device_gamma_vec(const Vec3 *v) {
   return {r_byte, g_byte, b_byte};
 }
 
-__global__ void render(const Camera *camera, const SphereBuffer *spheres,
-                       const Material *materials, FrameBuffer *buffer,
-                       size_t buff_size) {
+__global__ void cuda_render(const Camera *camera, const SphereBuffer *spheres,
+                            const Material *materials, FrameBuffer *buffer,
+                            size_t buff_size) {
   size_t i{blockDim.x * blockIdx.x + threadIdx.x};
   if (i >= buff_size) {
     return;

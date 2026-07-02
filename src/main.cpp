@@ -130,7 +130,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 SDL_AppResult SDL_AppIterate(void *appstate) {
   auto state{static_cast<AppState *>(appstate)};
   SDL_Log("Frame: %d", times);
-  render_cpu(*state->camera, *state->spheres, *state->materials,
+  cpu_render(*state->camera, *state->spheres, *state->materials,
              *state->buffer);
   ++times;
 
