@@ -1,0 +1,12 @@
+CompileFlags:
+  Add:
+    - --cuda-path=/opt/cuda
+  Remove:
+    - -forward-unknown-to-host-compiler
+    - --options-file
+    - -arch=native
+    - -Xcompiler=-Wall,-Wextra,-Wsign-conversion
+    - -Xcudafe=--display_error_number
+    - -Werror=all-warnings
+    - -lineinfo
+    - -expt-relaxed-constexpr
