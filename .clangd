@@ -7,6 +7,6 @@ CompileFlags:
     - -arch=native
     - -Xcompiler=-Wall,-Wextra,-Wsign-conversion
     - -Xcudafe=--display_error_number
-    - -Werror=all-warnings
+    - --Werror=all-warnings
     - -lineinfo
-    - -expt-relaxed-constexpr
+    - --expt-relaxed-constexpr
