@@ -9,7 +9,7 @@ static constexpr Vec3 up{0, 1, 0};
 
 struct Camera {
   Point3 center{0, 0, 0};
-  Point3 look_at{0, 0, -1};
+  Point3 look_at{0, 0, -100.0f};
 
   constexpr Camera() { init(); }
 
