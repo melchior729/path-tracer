@@ -1,13 +1,13 @@
 #pragma once
 
+#include "config.hpp"
 #include <algorithm>
-#include <cmath>
 
 struct Interval {
   float min;
   float max;
 
-  constexpr Interval() : min(INFINITY), max(-INFINITY) {}
+  constexpr Interval() : min(INF), max(-INF) {}
 
   constexpr Interval(float min, float max) : min(min), max(max) {}
 
@@ -29,7 +29,7 @@ struct Interval {
     return {min - padding, max + padding};
   }
 
-  static constexpr Interval empty() { return {INFINITY, -INFINITY}; }
+  static constexpr Interval empty() { return {INF, -INF}; }
 
-  static constexpr Interval universe() { return {-INFINITY, INFINITY}; }
+  static constexpr Interval universe() { return {-INF, INF}; }
 };

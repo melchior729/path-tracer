@@ -13,4 +13,4 @@ inline constexpr auto SAMPLE_COUNT{20};
 
 inline constexpr std::size_t MAX_DEPTH{20};
 
-inline constexpr auto INFINITY{std::numeric_limits<float>::infinity()};
+inline constexpr auto INF{std::numeric_limits<float>::infinity()};
