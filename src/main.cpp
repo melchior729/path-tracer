@@ -54,7 +54,7 @@ void add_scene_one(SphereBuffer &spheres, std::vector<Material> &materials) {
   spheres.add(0.0f, 0.0f, -3.0f, 1.0f, 0);      // red, center
   spheres.add(2.5f, 0.0f, -4.0f, 1.0f, 2);      // mirror, right
   spheres.add(-2.5f, 0.0f, -4.0f, 1.0f, 3);     // brushed, left
-  spheres.add(0.0f, -1.5f, -2.0f, 0.5f, 4);     // glass, foreground
+  spheres.add(0.0f, 2.5f, -2.0f, 0.5f, 4);      // glass, foreground
   spheres.add(0.0f, -101.0f, -3.0f, 100.0f, 1); // dark, ground sphere
 }
 
@@ -130,7 +130,8 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 SDL_AppResult SDL_AppIterate(void *appstate) {
   auto state{static_cast<AppState *>(appstate)};
   SDL_Log("Frame: %d", times);
-  render(*state->camera, *state->spheres, *state->materials, *state->buffer);
+  render_cpu(*state->camera, *state->spheres, *state->materials,
+             *state->buffer);
   ++times;
 
   void *pixels{};

@@ -12,6 +12,11 @@
 #include "vec3.hpp"
 #include <cassert>
 #include <cmath>
+#ifdef __CUDACC__
+#include <curand_kernel.h>
+#else
+struct curandState;
+#endif
 
 static Vec3 sample_square() {
   return {random_float() - 0.5f, random_float() - 0.5f, 0};
@@ -75,9 +80,9 @@ static Vec3 gamma_vec(const Vec3 &v) {
   return {r_byte, g_byte, b_byte};
 }
 
-inline void render(const Camera &camera, const SphereBuffer &spheres,
-                   const std::vector<Material> &materials,
-                   FrameBuffer &buffer) {
+inline void render_cpu(const Camera &camera, const SphereBuffer &spheres,
+                       const std::vector<Material> &materials,
+                       FrameBuffer &buffer) {
   for (size_t j{}; j < HEIGHT; ++j) {
     for (size_t i{}; i < WIDTH; ++i) {
       Vec3 col;
@@ -92,3 +97,8 @@ inline void render(const Camera &camera, const SphereBuffer &spheres,
     }
   }
 }
+
+void rng_init(curandState *state, size_t seed);
+
+void render(const Camera *camera, const SphereBuffer *spheres,
+            const Material *materials, FrameBuffer *buffer, size_t buff_size);
