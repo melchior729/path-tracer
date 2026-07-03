@@ -8,9 +8,9 @@ static constexpr auto BASE{255.0f};
 struct Color {
   uint32_t val;
 
-  constexpr Color() : val(0xFF000000) {}
+  constexpr HOSTDEV Color() : val(0xFF000000) {}
 
-  constexpr Color(float r_ch, float g_ch, float b_ch) {
+  constexpr HOSTDEV Color(float r_ch, float g_ch, float b_ch) {
     auto r{static_cast<uint32_t>(BASE * r_ch + 0.5f)};
     auto g{static_cast<uint32_t>(BASE * g_ch + 0.5f)};
     auto b{static_cast<uint32_t>(BASE * b_ch + 0.5f)};

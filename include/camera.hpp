@@ -1,11 +1,11 @@
 #pragma once
 
-#include "config.hpp"
 #include "ray.hpp"
-#include "util.hpp"
-#include "vec3.hpp"
+#include <numbers>
 
 static constexpr Vec3 up{0, 1, 0};
+
+constexpr float deg_to_rad(float d) { return d * std::numbers::pi / 180.0f; }
 
 struct Camera {
   Point3 center{0, 0, 0};
@@ -34,7 +34,7 @@ struct Camera {
     first_pixel = top_left + 0.5 * (delta_u + delta_v);
   }
 
-  constexpr Ray get_ray(const Vec3 &offset, size_t i, size_t j) const {
+  constexpr Ray HOSTDEV get_ray(const Vec3 offset, size_t i, size_t j) const {
     auto sample{first_pixel + ((i + offset.x()) * delta_u) +
                 ((j + offset.y()) * delta_v)};
     auto dir{sample - center};

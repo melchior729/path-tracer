@@ -9,7 +9,7 @@ struct FrameBuffer {
 
   constexpr FrameBuffer() {}
 
-  constexpr void set(std::size_t i, Color color) {
+  constexpr HOSTDEV void set(std::size_t i, Color color) {
     if (!in_bounds(i)) {
       return;
     }
@@ -17,7 +17,7 @@ struct FrameBuffer {
     pixels[i] = color;
   }
 
-  constexpr void set(std::size_t x, std::size_t y, Color color) {
+  constexpr HOSTDEV void set(std::size_t x, std::size_t y, Color color) {
     if (x >= WIDTH || y >= HEIGHT) {
       return;
     }
@@ -27,5 +27,7 @@ struct FrameBuffer {
 
   constexpr void clear() { pixels.fill(BLACK); }
 
-  constexpr bool in_bounds(std::size_t i) const { return i < WIDTH * HEIGHT; }
+  constexpr HOSTDEV bool in_bounds(std::size_t i) const {
+    return i < WIDTH * HEIGHT;
+  }
 };

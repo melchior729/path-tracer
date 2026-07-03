@@ -1,5 +1,11 @@
 #pragma once
 
+#ifdef __CUDACC__
+#define HOSTDEV __host__ __device__
+#else
+#define HOSTDEV
+#endif
+
 #include <limits>
 
 inline constexpr char TITLE[]{"Abhay's Path Tracer"};

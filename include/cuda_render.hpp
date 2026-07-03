@@ -1,7 +1,10 @@
+#pragma once
+
 #include "camera.hpp"
 #include "frame_buffer.hpp"
 #include "material.hpp"
 #include "sphere_buffer.hpp"
+
 #ifdef __CUDACC__
 #include <curand_kernel.h>
 #else

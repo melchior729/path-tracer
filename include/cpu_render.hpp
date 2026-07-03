@@ -1,22 +1,14 @@
 #pragma once
 
 #include "camera.hpp"
-#include "color.hpp"
-#include "config.hpp"
-#include "constants.hpp"
+#include "cpu_hit.hpp"
 #include "frame_buffer.hpp"
-#include "hit_record.hpp"
+#include "interval.hpp"
 #include "material.hpp"
+#include "ray.hpp"
 #include "sphere_buffer.hpp"
 #include "util.hpp"
-#include "vec3.hpp"
 #include <cassert>
-#include <cmath>
-#ifdef __CUDACC__
-#include <curand_kernel.h>
-#else
-struct curandState;
-#endif
 
 static Vec3 sample_square() {
   return {random_float() - 0.5f, random_float() - 0.5f, 0};
@@ -36,26 +28,29 @@ static Vec3 ray_color(const Ray &ray, const SphereBuffer &spheres,
 
   for (size_t i{}; i < depth; ++i) {
     HitRecord record;
-    if (!hit_spheres(spheres, incoming, Interval{0.001, INF}, record)) {
+    if (!cpu_hit_spheres(spheres, incoming, Interval{0.001, INF}, record)) {
       return mix_with_sky(incoming, acc_attenuation);
     }
 
     Ray scattered;
     Vec3 attenuation;
     auto material{materials[record.mat_idx]};
+    auto rand_float{random_float()};
+    Vec3 rand_vec{rand_float, random_float(), random_float()};
 
     switch (material.type) {
     case MaterialType::Lambertian:
-      material.lambertian.scatter(record, attenuation, scattered);
+      material.lambertian.scatter(record, rand_vec, attenuation, scattered);
       break;
     case MaterialType::Metal:
-      if (!material.metal.scatter(incoming, record, attenuation, scattered)) {
+      if (!material.metal.scatter(incoming, record, rand_vec, attenuation,
+                                  scattered)) {
         return mix_with_sky(incoming, acc_attenuation);
       }
       break;
     case MaterialType::Dielectric:
-      if (!material.dielectric.scatter(incoming, record, attenuation,
-                                       scattered)) {
+      if (!material.dielectric.scatter(incoming, record, rand_float,
+                                       attenuation, scattered)) {
         return mix_with_sky(incoming, acc_attenuation);
       }
       break;

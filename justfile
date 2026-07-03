@@ -12,6 +12,17 @@ debug:
 clean:
   rm -rf build/
 
+
 copy:
-  cat include/* src/* | wl-copy
+    #!/usr/bin/env bash
+    for f in CMakeLists.txt justfile $(find include src -type f); do
+        echo "========================================"
+        echo "FILE: $f"
+        echo "========================================"
+        cat "$f"
+        echo -e "\n"
+    done | wl-copy
+
+cloc:
+    cloc include/ src/ CMakeLists.txt
 

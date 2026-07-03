@@ -1,17 +1,16 @@
 #pragma once
 
-#include "constants.hpp"
+#include "background.hpp"
 #include "hit_record.hpp"
-#include "ray.hpp"
-#include "vec3.hpp"
 
 enum struct MaterialType { Lambertian, Metal, Dielectric };
 
 struct Lambertian {
   Vec3 albedo;
 
-  void scatter(const HitRecord &record, Vec3 &attenuation, Ray &out) {
-    auto dir{record.normal + random_norm()};
+  constexpr HOSTDEV void scatter(const HitRecord &record, Vec3 rand_norm,
+                                 Vec3 &attenuation, Ray &out) {
+    auto dir{record.normal + rand_norm};
     if (dir.near_zero()) {
       dir = record.normal;
     }
@@ -25,10 +24,10 @@ struct Metal {
   Vec3 albedo;
   float fuzz;
 
-  bool scatter(const Ray &in, const HitRecord &record, Vec3 &attenuation,
-               Ray &out) {
+  bool HOSTDEV scatter(const Ray in, const HitRecord &record, Vec3 rand_norm,
+                       Vec3 &attenuation, Ray &out) {
     auto dir{reflect(in.direction(), record.normal)};
-    dir = norm(dir) + fuzz * random_norm();
+    dir = norm(dir) + fuzz * rand_norm;
     out = {record.p, dir};
     if (dot(dir, record.normal) > 0) {
       attenuation = albedo;
@@ -42,8 +41,8 @@ struct Metal {
 struct Dielectric {
   float refraction_idx;
 
-  bool scatter(const Ray &in, const HitRecord &record, Vec3 &attenuation,
-               Ray &out) {
+  bool HOSTDEV scatter(const Ray in, const HitRecord record, float rand_float,
+                       Vec3 &attenuation, Ray &out) {
     attenuation = WHITE;
     auto ratio{record.front_facing ? 1.0 / refraction_idx : refraction_idx};
     auto dir{norm(in.direction())};
@@ -51,8 +50,7 @@ struct Dielectric {
     auto cos{std::min(dot(-dir, record.normal), 1.0f)};
     auto sin{std::sqrt(1.0 - cos * cos)};
 
-    if (ratio * sin > 1.0 ||
-        reflectance(cos, refraction_idx) > random_float()) {
+    if (ratio * sin > 1.0 || reflectance(cos, refraction_idx) > rand_float) {
       dir = reflect(dir, record.normal);
     } else {
       dir = refract(dir, record.normal, ratio);

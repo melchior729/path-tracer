@@ -6,12 +6,12 @@
 struct AABB {
   Interval x, y, z;
 
-  constexpr AABB() {}
+  constexpr HOSTDEV AABB() {}
 
-  constexpr AABB(const Interval &x, const Interval &y, const Interval &z)
+  constexpr HOSTDEV AABB(Interval x, Interval y, Interval z)
       : x(x), y(y), z(z) {}
 
-  constexpr AABB(const Point3 &min, const Point3 &max) {
+  constexpr HOSTDEV AABB(Point3 min, Point3 max) {
     x = (min.x() <= max.x()) ? Interval{min.x(), max.x()}
                              : Interval{max.x(), min.x()};
     y = (min.y() <= max.y()) ? Interval{min.y(), max.y()}
@@ -20,22 +20,22 @@ struct AABB {
                              : Interval{max.z(), min.z()};
   }
 
-  constexpr AABB(const AABB &a, const AABB &b) {
+  constexpr HOSTDEV AABB(const AABB &a, const AABB &b) {
     x = Interval{a.x, b.x};
     y = Interval{a.y, b.y};
     z = Interval{a.z, b.z};
   }
 
-  constexpr Interval &interval_axis(size_t n) {
+  constexpr HOSTDEV Interval interval_axis(size_t n) {
     return (n == 1) ? y : (n == 2) ? z : x;
   }
 
-  bool hit(const Ray &ray, Interval interval) {
-    auto &origin{ray.origin()};
-    auto &dir{ray.direction()};
+  bool HOSTDEV hit(Ray ray, Interval interval) {
+    auto origin{ray.origin()};
+    auto dir{ray.direction()};
 
     for (size_t ax{}; ax < 3; ++ax) {
-      auto &axis{interval_axis(ax)};
+      auto axis{interval_axis(ax)};
       auto inv_dir{1.0f / dir[ax]};
 
       auto t0{(axis.min - origin[ax]) * inv_dir};

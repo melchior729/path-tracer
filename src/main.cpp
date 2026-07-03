@@ -1,4 +1,3 @@
-#include <SDL3/SDL_events.h>
 #define SDL_MAIN_USE_CALLBACKS 1
 
 #include "SDL3/SDL_init.h"
@@ -6,15 +5,18 @@
 #include "SDL3/SDL_main.h"
 #include "SDL3/SDL_render.h"
 #include "config.hpp"
+#include "cpu_render.hpp"
+#include "cuda_render.hpp"
 #include "frame_buffer.hpp"
-#include "render.hpp"
 #include "sphere_buffer.hpp"
+#include <SDL3/SDL_events.h>
 #include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_video.h>
 #include <cstring>
 #include <memory>
 
 static int times{0};
+static bool cuda_on{};
 
 struct SDL_Deleter {
   void operator()(SDL_Window *w) const { SDL_DestroyWindow(w); }
@@ -120,6 +122,9 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     case SDLK_F:
       state->camera->move_y(-speed);
       break;
+    case SDLK_C:
+      cuda_on = !cuda_on;
+      break;
     }
     state->camera->init();
   }
@@ -130,8 +135,15 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 SDL_AppResult SDL_AppIterate(void *appstate) {
   auto state{static_cast<AppState *>(appstate)};
   SDL_Log("Frame: %d", times);
-  cpu_render(*state->camera, *state->spheres, *state->materials,
-             *state->buffer);
+
+  if (cuda_on) {
+    cuda_render(state->camera.get(), state->spheres.get(),
+                state->materials->data(), state->buffer.get(), WIDTH * HEIGHT);
+  } else {
+    cpu_render(*state->camera, *state->spheres, *state->materials,
+               *state->buffer);
+  }
+
   ++times;
 
   void *pixels{};
