@@ -9,7 +9,7 @@ set(CMAKE_CUDA_STANDARD 20)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_ARCHITECTURES native)
 
-file(GLOB SRCS "src/*.cpp" "src/cuda/*.cu")
+file(GLOB SRCS "src/*.cpp" "src/*.cu")
 
 add_executable(main)
 target_sources(main PRIVATE ${SRCS})
