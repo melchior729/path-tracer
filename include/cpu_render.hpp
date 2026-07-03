@@ -5,21 +5,11 @@
 #include "frame_buffer.hpp"
 #include "interval.hpp"
 #include "material.hpp"
+#include "random.hpp"
 #include "ray.hpp"
 #include "sphere_buffer.hpp"
 #include "util.hpp"
 #include <cassert>
-
-static Vec3 sample_square() {
-  return {random_float() - 0.5f, random_float() - 0.5f, 0};
-}
-
-static Vec3 mix_with_sky(const Ray &ray, const Vec3 &attenuation) {
-  auto dir{norm(ray.direction())};
-  auto a{0.5 * (dir.y() + 1.0f)};
-  auto sky_val{(1.0f - a) * WHITE + a * SKY_BLUE};
-  return attenuation * sky_val;
-}
 
 static Vec3 ray_color(const Ray &ray, const SphereBuffer &spheres,
                       const std::vector<Material> &materials, size_t depth) {
@@ -65,16 +55,6 @@ static Vec3 ray_color(const Ray &ray, const SphereBuffer &spheres,
   return {};
 }
 
-static float gamma(float v) { return v > 0 ? std::sqrt(v) : 0; }
-
-static Vec3 gamma_vec(const Vec3 &v) {
-  static constexpr Interval intensity{0.000, 0.999};
-  auto r_byte{intensity.clamp(gamma(v.x()))};
-  auto g_byte{intensity.clamp(gamma(v.y()))};
-  auto b_byte{intensity.clamp(gamma(v.z()))};
-  return {r_byte, g_byte, b_byte};
-}
-
 inline void cpu_render(const Camera &camera, const SphereBuffer &spheres,
                        const std::vector<Material> &materials,
                        FrameBuffer &buffer) {
@@ -82,7 +62,8 @@ inline void cpu_render(const Camera &camera, const SphereBuffer &spheres,
     for (size_t i{}; i < WIDTH; ++i) {
       Vec3 col;
       for (size_t s{}; s < SAMPLE_COUNT; ++s) {
-        auto ray{camera.get_ray(sample_square(), i, j)};
+        auto ray{camera.get_ray(sample_square(random_float(), random_float()),
+                                i, j)};
         col += ray_color(ray, spheres, materials, MAX_DEPTH);
       }
 

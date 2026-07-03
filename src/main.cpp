@@ -16,7 +16,7 @@
 #include <memory>
 
 static int times{0};
-static bool cuda_on{};
+static bool cuda_on{true};
 
 struct SDL_Deleter {
   void operator()(SDL_Window *w) const { SDL_DestroyWindow(w); }

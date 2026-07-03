@@ -7,7 +7,9 @@
 #include "interval.hpp"
 #include "material.hpp"
 #include "sphere_buffer.hpp"
+#include "util.hpp"
 #include "vec3.hpp"
+#include <cassert>
 #include <curand_kernel.h>
 
 static constexpr size_t NUM_BLOCKS{1};
@@ -18,20 +20,7 @@ __global__ void rng_init(curandState *state, size_t seed) {
   curand_init(seed, i, 0, &state[i]);
 }
 
-// __device__ static float device_random_float() { return 0.0f; }
-//
-// __device__ static float device_random_float(float min, float max) {
-//   return min < max ? min : max;
-// }
-//
-__device__ static Vec3 sample_square() { return {}; }
-
-__device__ static Vec3 mix_with_sky(Ray ray, Vec3 attenuation) {
-  auto dir{norm(ray.direction())};
-  auto a{0.5 * (dir.y() + 1.0f)};
-  auto sky_val{(1.0f - a) * WHITE + a * SKY_BLUE};
-  return attenuation * sky_val;
-}
+__device__ static float random_float() { return 0.0f; }
 
 __device__ static Vec3 ray_color(Ray ray, const SphereBuffer *spheres,
                                  [[maybe_unused]] const Material *materials,
@@ -45,25 +34,37 @@ __device__ static Vec3 ray_color(Ray ray, const SphereBuffer *spheres,
       return mix_with_sky(incoming, acc_attenuation);
     }
 
-    // Ray scattered;
-    // Vec3 attenuation;
+    Ray scattered;
+    Vec3 attenuation;
+    auto material{materials[record.mat_idx]};
+    auto rand_float{random_float()};
+    Vec3 rand_vec{rand_float, random_float(), random_float()};
 
-    // check with materials.
+    switch (material.type) {
+    case MaterialType::Lambertian:
+      material.lambertian.scatter(record, rand_vec, attenuation, scattered);
+      break;
+    case MaterialType::Metal:
+      if (!material.metal.scatter(incoming, record, rand_vec, attenuation,
+                                  scattered)) {
+        return mix_with_sky(incoming, acc_attenuation);
+      }
+      break;
+    case MaterialType::Dielectric:
+      if (!material.dielectric.scatter(incoming, record, rand_float,
+                                       attenuation, scattered)) {
+        return mix_with_sky(incoming, acc_attenuation);
+      }
+      break;
+    default:
+      assert(false);
+    }
 
-    // iterate
+    incoming = scattered;
+    acc_attenuation = attenuation;
   }
 
   return {};
-}
-
-__device__ static float device_gamma(float f) { return f > 0 ? sqrt(f) : 0; }
-
-__device__ static Vec3 device_gamma_vec(const Vec3 *v) {
-  static constexpr Interval intensity{0.000, 0.999};
-  auto r_byte{intensity.clamp(device_gamma(v->x()))};
-  auto g_byte{intensity.clamp(device_gamma(v->y()))};
-  auto b_byte{intensity.clamp(device_gamma(v->z()))};
-  return {r_byte, g_byte, b_byte};
 }
 
 __global__ void render(const Camera *camera, const SphereBuffer *spheres,
@@ -78,12 +79,13 @@ __global__ void render(const Camera *camera, const SphereBuffer *spheres,
     for (size_t i{}; i < WIDTH; ++i) {
       Vec3 col;
       for (size_t s{}; s < SAMPLE_COUNT; ++s) {
-        auto ray{camera->get_ray(sample_square(), i, j)};
+        auto ray{camera->get_ray(sample_square(random_float(), random_float()),
+                                 i, j)};
         col += ray_color(ray, spheres, materials, MAX_DEPTH);
       }
 
       col /= SAMPLE_COUNT;
-      auto writtable{device_gamma_vec(&col)};
+      auto writtable{gamma_vec(col)};
       buffer->set(i, j, Color{writtable});
     }
   }

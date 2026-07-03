@@ -1,39 +1,29 @@
 #pragma once
 
+#include "background.hpp"
+#include "config.hpp"
+#include "interval.hpp"
+#include "ray.hpp"
 #include "vec3.hpp"
-#include <random>
+#include <cmath>
 
-inline float random_float() {
-  static std::uniform_real_distribution<double> distribution(0.0, 1.0);
-  static std::mt19937 generator;
-  return distribution(generator);
+inline HOSTDEV Vec3 sample_square(float rand_x, float rand_y) {
+  return {rand_x - 0.5f, rand_y - 0.5f, 0};
 }
 
-inline float random_float(float min, float max) {
-  return min + (max - min) * random_float();
+static HOSTDEV float gamma(float f) { return f > 0 ? std::sqrt(f) : 0; }
+
+inline HOSTDEV Vec3 gamma_vec(const Vec3 v) {
+  static constexpr Interval intensity{0.000, 0.999};
+  auto r_byte{intensity.clamp(gamma(v.x()))};
+  auto g_byte{intensity.clamp(gamma(v.y()))};
+  auto b_byte{intensity.clamp(gamma(v.z()))};
+  return {r_byte, g_byte, b_byte};
 }
 
-inline Vec3 random_vec3() {
-  return {random_float(), random_float(), random_float()};
-}
-
-inline Vec3 random_vec3(float min, float max) {
-  return {random_float(min, max), random_float(min, max),
-          random_float(min, max)};
-}
-
-inline Vec3 random_norm() {
-  static constexpr auto epilson{1e-45f};
-  while (true) {
-    auto v{random_vec3(-1.0f, 1.0f)};
-    auto len_sq{v.len_sq()};
-    if (len_sq <= 1.0f && len_sq > epilson) {
-      return v;
-    }
-  }
-}
-
-inline Vec3 random_on_hemisphere(Vec3 normal) {
-  auto v{random_norm()};
-  return v.dot(normal) > 0 ? v : -v;
+inline HOSTDEV Vec3 mix_with_sky(Ray ray, Vec3 attenuation) {
+  auto dir{norm(ray.direction())};
+  auto a{0.5 * (dir.y() + 1.0f)};
+  auto sky_val{(1.0f - a) * WHITE + a * SKY_BLUE};
+  return attenuation * sky_val;
 }
