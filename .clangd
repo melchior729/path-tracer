@@ -10,3 +10,4 @@ CompileFlags:
     - --Werror=all-warnings
     - -lineinfo
     - --expt-relaxed-constexpr
+    - -rdc=true

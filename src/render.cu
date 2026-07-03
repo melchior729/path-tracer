@@ -1,5 +1,5 @@
 
-#include "cuda_hit.hpp"
+#include "cuda_hit.cuh"
 
 #include "config.hpp"
 #include "cuda_render.hpp"
@@ -24,7 +24,7 @@ __global__ void rng_init(curandState *state, size_t seed) {
 //   return min < max ? min : max;
 // }
 //
-__device__ static Vec3 device_sample_square() { return {}; }
+__device__ static Vec3 sample_square() { return {}; }
 
 __device__ static Vec3 mix_with_sky(Ray ray, Vec3 attenuation) {
   auto dir{norm(ray.direction())};
@@ -33,9 +33,9 @@ __device__ static Vec3 mix_with_sky(Ray ray, Vec3 attenuation) {
   return attenuation * sky_val;
 }
 
-__device__ static Vec3
-device_ray_color(Ray ray, const SphereBuffer *spheres,
-                 [[maybe_unused]] const Material *materials, size_t depth) {
+__device__ static Vec3 ray_color(Ray ray, const SphereBuffer *spheres,
+                                 [[maybe_unused]] const Material *materials,
+                                 size_t depth) {
   Ray incoming{ray};
   Vec3 acc_attenuation{WHITE};
 
@@ -78,8 +78,8 @@ __global__ void render(const Camera *camera, const SphereBuffer *spheres,
     for (size_t i{}; i < WIDTH; ++i) {
       Vec3 col;
       for (size_t s{}; s < SAMPLE_COUNT; ++s) {
-        auto ray{camera->get_ray(device_sample_square(), i, j)};
-        col += device_ray_color(ray, spheres, materials, MAX_DEPTH);
+        auto ray{camera->get_ray(sample_square(), i, j)};
+        col += ray_color(ray, spheres, materials, MAX_DEPTH);
       }
 
       col /= SAMPLE_COUNT;

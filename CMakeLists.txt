@@ -29,6 +29,8 @@ target_compile_options(main PRIVATE
     $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_WARNINGS}>
 )
 
+set_target_properties(main PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+
 find_package(SDL3 REQUIRED)
 target_link_libraries(main PRIVATE SDL3::SDL3)
 target_compile_definitions(main PRIVATE SDL_MAIN_USE_CALLBACKS)
