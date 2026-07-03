@@ -84,7 +84,7 @@ __global__ void render(const Camera *camera, const SphereBuffer *spheres,
 
       col /= SAMPLE_COUNT;
       auto writtable{device_gamma_vec(&col)};
-      buffer->set(j, i, Color{writtable});
+      buffer->set(i, j, Color{writtable});
     }
   }
 }
