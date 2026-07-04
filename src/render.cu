@@ -12,15 +12,21 @@
 #include <cassert>
 #include <curand_kernel.h>
 
-__global__ void rng_init(curandState *state, size_t seed) {
+__global__ void rng_init(curandState *rng, size_t seed) {
   size_t i{blockDim.x * blockIdx.x + threadIdx.x};
-  curand_init(seed, i, 0, &state[i]);
+  curand_init(seed, i, 0, &rng[i]);
 }
 
-__device__ static float random_float() { return 0.0f; }
+__device__ static float random_float(curandState *rng) {
+  size_t i{blockDim.x * blockIdx.x + threadIdx.x};
+  auto state{rng[i]};
+  auto rand{curand_uniform(&state)};
+  rng[i] = state;
+  return rand;
+}
 
 __device__ static Vec3 ray_color(Ray ray, const SphereBuffer *spheres,
-                                 [[maybe_unused]] const Material *materials,
+                                 const Material *materials, curandState *rng,
                                  size_t depth) {
   Ray incoming{ray};
   Vec3 acc_attenuation{WHITE};
@@ -34,8 +40,8 @@ __device__ static Vec3 ray_color(Ray ray, const SphereBuffer *spheres,
     Ray scattered;
     Vec3 attenuation;
     auto material{materials[record.mat_idx]};
-    auto rand_float{random_float()};
-    Vec3 rand_vec{rand_float, random_float(), random_float()};
+    auto rand_float{random_float(rng)};
+    Vec3 rand_vec{rand_float, random_float(rng), random_float(rng)};
 
     switch (material.type) {
     case MaterialType::Lambertian:
@@ -65,8 +71,8 @@ __device__ static Vec3 ray_color(Ray ray, const SphereBuffer *spheres,
 }
 
 __global__ void render(const Camera *camera, const SphereBuffer *spheres,
-                       const Material *materials, FrameBuffer *buffer,
-                       size_t buff_size) {
+                       const Material *materials, curandState *rng,
+                       FrameBuffer *buffer, size_t buff_size) {
   size_t i{blockDim.x * blockIdx.x + threadIdx.x};
   if (i >= buff_size) {
     return;
@@ -76,9 +82,9 @@ __global__ void render(const Camera *camera, const SphereBuffer *spheres,
     for (size_t i{}; i < WIDTH; ++i) {
       Vec3 col;
       for (size_t s{}; s < SAMPLE_COUNT; ++s) {
-        auto ray{camera->get_ray(sample_square(random_float(), random_float()),
-                                 i, j)};
-        col += ray_color(ray, spheres, materials, MAX_DEPTH);
+        auto ray{camera->get_ray(
+            sample_square(random_float(rng), random_float(rng)), i, j)};
+        col += ray_color(ray, spheres, materials, rng, MAX_DEPTH);
       }
 
       col /= SAMPLE_COUNT;
@@ -97,8 +103,8 @@ void cuda_rng_init(void *state, size_t seed) {
 }
 
 void cuda_render(const Camera *camera, const SphereBuffer *spheres,
-                 const Material *materials, FrameBuffer *buffer,
+                 const Material *materials, void *rng, FrameBuffer *buffer,
                  size_t buff_size) {
-  render<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(camera, spheres, materials, buffer,
-                                            buff_size);
+  render<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(
+      camera, spheres, materials, (curandState *)rng, buffer, buff_size);
 }

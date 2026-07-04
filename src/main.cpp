@@ -140,7 +140,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
   if (cuda_on) {
     cuda_render(state->camera.get(), state->spheres.get(),
-                state->materials->data(), state->buffer.get(), WIDTH * HEIGHT);
+                state->materials->data(), state->rng_states,
+                state->buffer.get(), WIDTH * HEIGHT);
   } else {
     cpu_render(*state->camera, *state->spheres, *state->materials,
                *state->buffer);
