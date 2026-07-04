@@ -12,6 +12,13 @@
 #include <cassert>
 #include <curand_kernel.h>
 
+static constexpr auto BLOCK_DIM{8};
+static constexpr auto BLOCK_WIDTH{WIDTH / BLOCK_DIM};
+static constexpr auto BLOCK_HEIGHT{HEIGHT / BLOCK_DIM};
+
+static constexpr dim3 THREADS_PER_BLOCK{BLOCK_DIM, BLOCK_DIM};
+static constexpr dim3 NUM_BLOCKS{BLOCK_WIDTH, BLOCK_HEIGHT};
+
 __global__ void rng_init(curandState *rng, size_t seed) {
   size_t i{blockDim.x * blockIdx.x + threadIdx.x};
   curand_init(seed, i, 0, &rng[i]);
