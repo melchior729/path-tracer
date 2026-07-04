@@ -32,6 +32,7 @@ struct AppState {
   std::unique_ptr<std::vector<Material>> materials;
   std::unique_ptr<SphereBuffer> spheres;
   std::unique_ptr<FrameBuffer> buffer;
+  void *rng_states; // curandState*
 };
 
 void add_scene_one(SphereBuffer &spheres, std::vector<Material> &materials) {
@@ -85,11 +86,12 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
   state->camera = std::make_unique<Camera>();
   state->materials = std::make_unique<std::vector<Material>>();
   state->spheres = std::make_unique<SphereBuffer>();
-
-  add_scene_one(*state->spheres, *state->materials);
-
   state->buffer = std::make_unique<FrameBuffer>();
 
+  curand_malloc(&state->rng_states);
+  cuda_rng_init(state->rng_states, SEED);
+
+  add_scene_one(*state->spheres, *state->materials);
   *appstate = state.release();
   return SDL_APP_CONTINUE;
 }

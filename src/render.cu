@@ -12,9 +12,6 @@
 #include <cassert>
 #include <curand_kernel.h>
 
-static constexpr size_t NUM_BLOCKS{1};
-static constexpr size_t THREADS_PER_BLOCK{256};
-
 __global__ void rng_init(curandState *state, size_t seed) {
   size_t i{blockDim.x * blockIdx.x + threadIdx.x};
   curand_init(seed, i, 0, &state[i]);
@@ -91,8 +88,12 @@ __global__ void render(const Camera *camera, const SphereBuffer *spheres,
   }
 }
 
-void cuda_rng_init(curandState *state, size_t seed) {
-  rng_init<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(state, seed);
+void curand_malloc(void **state) {
+  cudaMalloc(state, sizeof(curandState) * NUM_BLOCKS * THREADS_PER_BLOCK);
+}
+
+void cuda_rng_init(void *state, size_t seed) {
+  rng_init<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>((curandState *)state, seed);
 }
 
 void cuda_render(const Camera *camera, const SphereBuffer *spheres,

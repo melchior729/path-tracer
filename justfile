@@ -12,6 +12,8 @@ debug:
 clean:
   rm -rf build/
 
+cloc:
+    cloc include/ src/ CMakeLists.txt
 
 copy:
     #!/usr/bin/env bash
@@ -23,6 +25,4 @@ copy:
         echo -e "\n"
     done | wl-copy
 
-cloc:
-    cloc include/ src/ CMakeLists.txt
 

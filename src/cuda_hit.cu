@@ -41,8 +41,6 @@ __device__ bool hit_sphere([[maybe_unused]] const SphereBuffer *spheres,
   record->set_normal(ray, surface_normal);
   record->mat_idx = spheres->materials[i];
   return true;
-
-  return false;
 }
 
 __device__ bool cuda_hit_spheres(const SphereBuffer *spheres, Ray ray,
