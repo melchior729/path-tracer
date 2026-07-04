@@ -1,9 +1,9 @@
 #define SDL_MAIN_USE_CALLBACKS 1
 
 #include "SDL3/SDL_init.h"
-#include "SDL3/SDL_log.h"
 #include "SDL3/SDL_main.h"
 #include "SDL3/SDL_render.h"
+#include "SDL3/SDL_timer.h"
 #include "config.hpp"
 #include "cpu_render.hpp"
 #include "cuda_render.hpp"
@@ -15,8 +15,9 @@
 #include <cstring>
 #include <memory>
 
-static int times{0};
 static bool cuda_on{true};
+static bool show_overlay{true};
+static uint64_t last_time{};
 
 struct SDL_Deleter {
   void operator()(SDL_Window *w) const { SDL_DestroyWindow(w); }
@@ -127,17 +128,38 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     case SDLK_C:
       cuda_on = !cuda_on;
       break;
+    case SDLK_I:
+      show_overlay = !show_overlay;
+      break;
+      state->camera->init();
     }
-    state->camera->init();
   }
 
   return SDL_APP_CONTINUE;
 }
 
+static void draw_overlay(AppState *state) {
+  if (!show_overlay) {
+    return;
+  }
+
+  uint64_t now{SDL_GetPerformanceCounter()};
+  double frame_ms = (double)(now - last_time) * 1000 /
+                    static_cast<double>(SDL_GetPerformanceFrequency());
+  last_time = now;
+
+  char line[64];
+  SDL_snprintf(line, sizeof(line), "%.2f ms | %.0f fps", frame_ms,
+               1000.0 / frame_ms);
+  SDL_SetRenderDrawColor(state->renderer.get(), 0x0, 0x0, 0x0, 0xFF);
+  constexpr float overlay_scale{2.0f};
+  SDL_SetRenderScale(state->renderer.get(), overlay_scale, overlay_scale);
+  SDL_RenderDebugText(state->renderer.get(), 4.0f, 4.0f, line);
+  SDL_SetRenderScale(state->renderer.get(), 1.0f, 1.0f);
+}
+
 SDL_AppResult SDL_AppIterate(void *appstate) {
   auto state{static_cast<AppState *>(appstate)};
-  SDL_Log("Frame: %d", times);
-
   if (cuda_on) {
     cuda_render(state->camera.get(), state->spheres.get(),
                 state->materials->data(), state->rng_states,
@@ -146,8 +168,6 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     cpu_render(*state->camera, *state->spheres, *state->materials,
                *state->buffer);
   }
-
-  ++times;
 
   void *pixels{};
   int pitch{};
@@ -159,7 +179,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
   }
 
   SDL_RenderTexture(state->renderer.get(), state->texture.get(), NULL, NULL);
+  draw_overlay(state);
   SDL_RenderPresent(state->renderer.get());
+
   return SDL_APP_CONTINUE;
 }
 
