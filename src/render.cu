@@ -71,7 +71,7 @@ __device__ static Vec3 ray_color(Ray ray, const SphereBuffer *spheres,
     }
 
     incoming = scattered;
-    acc_attenuation = attenuation;
+    acc_attenuation *= attenuation;
   }
 
   return {};
