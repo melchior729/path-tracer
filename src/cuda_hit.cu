@@ -2,10 +2,8 @@
 #include "interval.hpp"
 #include "sphere_buffer.hpp"
 
-__device__ bool hit_sphere([[maybe_unused]] const SphereBuffer *spheres,
-                           [[maybe_unused]] Ray ray, size_t i,
-                           [[maybe_unused]] Interval interval,
-                           [[maybe_unused]] HitRecord *record) {
+__device__ bool hit_sphere(const SphereBuffer *spheres, Ray ray, size_t i,
+                           Interval interval, HitRecord *record) {
   auto x{spheres->center_x[i]};
   auto y{spheres->center_y[i]};
   auto z{spheres->center_z[i]};
