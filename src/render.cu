@@ -79,30 +79,28 @@ __device__ static Vec3 ray_color(Ray ray, const SphereBuffer *spheres,
 
 __global__ void render(const Camera *camera, const SphereBuffer *spheres,
                        const Material *materials, curandState *rng,
-                       FrameBuffer *buffer, size_t buff_size) {
+                       FrameBuffer *buffer, size_t width, size_t height) {
   size_t i{blockDim.x * blockIdx.x + threadIdx.x};
-  if (i >= buff_size) {
+  size_t j{blockDim.y * blockIdx.y + threadIdx.y};
+  if (i >= width || j >= height) {
     return;
   }
 
-  for (size_t j{}; j < HEIGHT; ++j) {
-    for (size_t i{}; i < WIDTH; ++i) {
-      Vec3 col;
-      for (size_t s{}; s < SAMPLE_COUNT; ++s) {
-        auto ray{camera->get_ray(
-            sample_square(random_float(rng), random_float(rng)), i, j)};
-        col += ray_color(ray, spheres, materials, rng, MAX_DEPTH);
-      }
-
-      col /= SAMPLE_COUNT;
-      auto writtable{gamma_vec(col)};
-      buffer->set(i, j, Color{writtable});
-    }
+  Vec3 col;
+  for (size_t s{}; s < SAMPLE_COUNT; ++s) {
+    auto ray{camera->get_ray(
+        sample_square(random_float(rng), random_float(rng)), i, j)};
+    col += ray_color(ray, spheres, materials, rng, MAX_DEPTH);
   }
+
+  col /= SAMPLE_COUNT;
+  auto writtable{gamma_vec(col)};
+  buffer->set(i, j, Color{writtable});
 }
 
 void curand_malloc(void **state) {
-  cudaMalloc(state, sizeof(curandState) * NUM_BLOCKS * THREADS_PER_BLOCK);
+  cudaMalloc(state,
+             sizeof(curandState) * BLOCK_WIDTH * BLOCK_HEIGHT * BLOCK_DIM);
 }
 
 void cuda_rng_init(void *state, size_t seed) {
@@ -111,7 +109,7 @@ void cuda_rng_init(void *state, size_t seed) {
 
 void cuda_render(const Camera *camera, const SphereBuffer *spheres,
                  const Material *materials, void *rng, FrameBuffer *buffer,
-                 size_t buff_size) {
+                 size_t width, size_t height) {
   render<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(
-      camera, spheres, materials, (curandState *)rng, buffer, buff_size);
+      camera, spheres, materials, (curandState *)rng, buffer, width, height);
 }
