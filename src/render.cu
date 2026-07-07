@@ -113,3 +113,30 @@ void cuda_render(const Camera *camera, const SphereBuffer *spheres,
   render<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(
       camera, spheres, materials, (curandState *)rng, buffer, width, height);
 }
+
+template <typename T> static void upload_arr(T **dest, T **src, size_t N) {
+  auto T_bytes_per_arr{N * sizeof(T)};
+  cudaMalloc((void **)dest, T_bytes_per_arr);
+  cudaMemcpy(*dest, *src, N, cudaMemcpyHostToDevice);
+  *src = *dest;
+}
+
+static void move(float **x, float **y, float **z, float **r, size_t **m,
+                 size_t count) {
+  float *d_x;
+  float *d_y;
+  float *d_z;
+  float *d_r;
+  size_t *d_m;
+
+  upload_arr(&d_x, x, count);
+  upload_arr(&d_y, y, count);
+  upload_arr(&d_z, z, count);
+  upload_arr(&d_r, r, count);
+  upload_arr(&d_m, m, count);
+}
+
+void move_array_to_device(float **x, float **y, float **z, float **r,
+                          size_t **m, size_t count) {
+  move(x, y, z, r, m, count);
+}

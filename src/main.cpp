@@ -89,8 +89,11 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
   state->texture.reset(t);
   state->camera = std::make_unique<Camera>();
   state->materials = std::make_unique<std::vector<Material>>();
-  state->spheres =
-      std::make_unique<SphereBuffer>(add_scene_one(*state->materials.get()));
+
+  auto spheres{add_scene_one(*state->materials.get())};
+  move_array_to_device(&spheres.center_x, &spheres.center_y, &spheres.center_z,
+                       &spheres.radii, &spheres.materials, spheres.size);
+  state->spheres = std::make_unique<SphereBuffer>(spheres);
   state->buffer = std::make_unique<FrameBuffer>();
 
   curand_malloc(&state->rng_states);
