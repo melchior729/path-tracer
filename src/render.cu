@@ -101,8 +101,8 @@ __global__ void render(const Camera *camera, const SphereBuffer *spheres,
 }
 
 void curand_malloc(void **state) {
-  cudaMalloc(state,
-             sizeof(curandState) * BLOCK_WIDTH * BLOCK_HEIGHT * BLOCK_DIM);
+  CUDA_CHECK(cudaMalloc(state, sizeof(curandState) * BLOCK_WIDTH *
+                                   BLOCK_HEIGHT * BLOCK_DIM));
 }
 
 void cuda_rng_init(void *state, size_t seed) {
@@ -114,13 +114,13 @@ void cuda_render(const Camera *camera, const SphereBuffer *spheres,
                  size_t width, size_t height) {
   render<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(
       camera, spheres, materials, (curandState *)rng, buffer, width, height);
-  cudaDeviceSynchronize();
+  CUDA_CHECK(cudaDeviceSynchronize());
 }
 
 template <typename T> static void upload_arr(T **dest, T **src, size_t N) {
   auto T_bytes_per_arr{N * sizeof(T)};
-  cudaMalloc((void **)dest, T_bytes_per_arr);
-  cudaMemcpy(*dest, *src, T_bytes_per_arr, cudaMemcpyHostToDevice);
+  CUDA_CHECK(cudaMalloc((void **)dest, T_bytes_per_arr));
+  CUDA_CHECK(cudaMemcpy(*dest, *src, T_bytes_per_arr, cudaMemcpyHostToDevice));
   *src = *dest;
 }
 
