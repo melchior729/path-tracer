@@ -47,7 +47,7 @@ __device__ bool cuda_hit_spheres(const SphereBuffer *spheres, Ray ray,
   auto closest{interval.max};
   auto hit{false};
 
-  for (size_t i{}; i < spheres->center_x.size(); ++i) {
+  for (size_t i{}; i < spheres->size; ++i) {
     if (hit_sphere(spheres, ray, i, {interval.min, closest}, &temp)) {
       hit = true;
       closest = temp.t;

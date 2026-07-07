@@ -36,7 +36,7 @@ struct AppState {
   void *rng_states; // curandState*
 };
 
-void add_scene_one(SphereBuffer &spheres, std::vector<Material> &materials) {
+SphereBuffer add_scene_one(std::vector<Material> &materials) {
   Lambertian red{Vec3{0.8f, 0.1f, 0.1f}};
   Lambertian dark{Vec3{0.15f, 0.15f, 0.15f}};
   Metal mirror{Vec3{0.9f, 0.9f, 0.9f}, 0.0f};
@@ -55,11 +55,14 @@ void add_scene_one(SphereBuffer &spheres, std::vector<Material> &materials) {
   materials.push_back(mat3); // 3: brushed metal
   materials.push_back(mat4); // 4: glass
 
-  spheres.add(0.0f, 0.0f, -3.0f, 1.0f, 0);      // red, center
-  spheres.add(2.5f, 0.0f, -4.0f, 1.0f, 2);      // mirror, right
-  spheres.add(-2.5f, 0.0f, -4.0f, 1.0f, 3);     // brushed, left
-  spheres.add(0.0f, 2.5f, -2.0f, 0.5f, 4);      // glass, foreground
-  spheres.add(0.0f, -101.0f, -3.0f, 100.0f, 1); // dark, ground sphere
+  std::vector<Sphere> spheres;
+  spheres.push_back({0.0f, 0.0f, -3.0f, 1.0f, 0});      // red, center
+  spheres.push_back({2.5f, 0.0f, -4.0f, 1.0f, 2});      // mirror, right
+  spheres.push_back({-2.5f, 0.0f, -4.0f, 1.0f, 3});     // brushed, left
+  spheres.push_back({0.0f, 2.5f, -2.0f, 0.5f, 4});      // glass, foreground
+  spheres.push_back({0.0f, -101.0f, -3.0f, 100.0f, 1}); // dark, ground sphere
+
+  return SphereBuffer{spheres};
 }
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
@@ -86,13 +89,13 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
   state->texture.reset(t);
   state->camera = std::make_unique<Camera>();
   state->materials = std::make_unique<std::vector<Material>>();
-  state->spheres = std::make_unique<SphereBuffer>();
+  state->spheres =
+      std::make_unique<SphereBuffer>(add_scene_one(*state->materials.get()));
   state->buffer = std::make_unique<FrameBuffer>();
 
   curand_malloc(&state->rng_states);
   cuda_rng_init(state->rng_states, SEED);
 
-  add_scene_one(*state->spheres, *state->materials);
   *appstate = state.release();
   return SDL_APP_CONTINUE;
 }
@@ -160,6 +163,7 @@ static void draw_overlay(AppState *state) {
 
 SDL_AppResult SDL_AppIterate(void *appstate) {
   auto state{static_cast<AppState *>(appstate)};
+
   if (cuda_on) {
     cuda_render(state->camera.get(), state->spheres.get(),
                 state->materials->data(), state->rng_states,
