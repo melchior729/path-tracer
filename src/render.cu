@@ -11,6 +11,7 @@
 #include "vec3.hpp"
 #include <cassert>
 #include <curand_kernel.h>
+#include <stdio.h>
 
 static constexpr auto BLOCK_DIM{8};
 static constexpr auto BLOCK_WIDTH{WIDTH / BLOCK_DIM};
@@ -63,6 +64,7 @@ __device__ static Vec3 ray_color(Ray ray, const SphereBuffer *spheres,
     case MaterialType::Dielectric:
       if (!material.dielectric.scatter(incoming, record, rand_float,
                                        attenuation, scattered)) {
+        ;
         return mix_with_sky(incoming, acc_attenuation);
       }
       break;
@@ -112,12 +114,13 @@ void cuda_render(const Camera *camera, const SphereBuffer *spheres,
                  size_t width, size_t height) {
   render<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(
       camera, spheres, materials, (curandState *)rng, buffer, width, height);
+  cudaDeviceSynchronize();
 }
 
 template <typename T> static void upload_arr(T **dest, T **src, size_t N) {
   auto T_bytes_per_arr{N * sizeof(T)};
   cudaMalloc((void **)dest, T_bytes_per_arr);
-  cudaMemcpy(*dest, *src, N, cudaMemcpyHostToDevice);
+  cudaMemcpy(*dest, *src, T_bytes_per_arr, cudaMemcpyHostToDevice);
   *src = *dest;
 }
 

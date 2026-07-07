@@ -91,6 +91,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
   state->materials = std::make_unique<std::vector<Material>>();
 
   auto spheres{add_scene_one(*state->materials.get())};
+
   move_array_to_device(&spheres.center_x, &spheres.center_y, &spheres.center_z,
                        &spheres.radii, &spheres.materials, spheres.size);
   state->spheres = std::make_unique<SphereBuffer>(spheres);
