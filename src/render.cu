@@ -137,12 +137,16 @@ void move_to_device(float **x, float **y, float **z, float **radii,
   upload_arr(&d_z, z, count);
   upload_arr(&d_r, radii, count);
   upload_arr(&d_m, materials, count);
-  upload_arr(&d_b, buffer, 1);
+
+  auto buffer_size{sizeof(FrameBuffer)};
+  CUDA_CHECK(cudaMalloc((void **)&d_b, buffer_size));
+  *buffer = d_b;
 }
 
 void move_fb_to_host(FrameBuffer *b, FrameBuffer *d_b) {
   CUDA_CHECK(cudaMemcpy(b, d_b, sizeof(FrameBuffer), cudaMemcpyDeviceToHost));
 }
+
 Camera *cuda_malloc_camera() {
   Camera *camera;
   CUDA_CHECK(cudaMalloc((void **)&camera, sizeof(Camera)));

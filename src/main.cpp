@@ -95,12 +95,10 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
   state->materials = std::make_unique<std::vector<Material>>();
   auto spheres{add_scene_one(*state->materials.get())};
   state->cpu_buffer = std::make_unique<FrameBuffer>();
-  state->gpu_buffer =
 
-      // spherebuffer pointers point to device memory
-      move_to_device(&spheres.center_x, &spheres.center_y, &spheres.center_z,
-                     &spheres.radii, &spheres.materials, &state->gpu_buffer,
-                     spheres.size);
+  move_to_device(&spheres.center_x, &spheres.center_y, &spheres.center_z,
+                 &spheres.radii, &spheres.materials, &state->gpu_buffer,
+                 spheres.size);
 
   state->spheres = std::make_unique<SphereBuffer>(spheres);
 
