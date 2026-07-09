@@ -15,8 +15,8 @@ add_executable(main)
 target_sources(main PRIVATE ${SRCS})
 target_include_directories(main PUBLIC include)
 
-set(CXX_WARNINGS -Wall -Wextra -Werror -Wsign-conversion -pedantic-errors -g)
-set(CUDA_WARNINGS
+set(CXX_FLAGS -Wall -Wextra -Werror -Wsign-conversion -pedantic-errors -g)
+set(CUDA_FLAGS
   -Xcompiler=-Wall,-Wextra,-Wsign-conversion
   -Xcudafe=--display_error_number
   --Werror=all-warnings
@@ -25,8 +25,8 @@ set(CUDA_WARNINGS
 )
 
 target_compile_options(main PRIVATE
-    $<$<COMPILE_LANGUAGE:CXX>:${CXX_WARNINGS}>
-    $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_WARNINGS}>
+    $<$<COMPILE_LANGUAGE:CXX>:${CXX_FLAGS}>
+    $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_FLAGS}>
 )
 
 set_target_properties(main PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
