@@ -124,22 +124,23 @@ template <typename T> static void upload_arr(T **dest, T **src, size_t N) {
   *src = *dest;
 }
 
-static void move(float **x, float **y, float **z, float **r, size_t **m,
-                 size_t count) {
+void move_to_device(float **x, float **y, float **z, float **radii,
+                    size_t **materials, FrameBuffer **buffer, size_t count) {
   float *d_x;
   float *d_y;
   float *d_z;
   float *d_r;
   size_t *d_m;
+  FrameBuffer *d_b;
 
   upload_arr(&d_x, x, count);
   upload_arr(&d_y, y, count);
   upload_arr(&d_z, z, count);
-  upload_arr(&d_r, r, count);
-  upload_arr(&d_m, m, count);
+  upload_arr(&d_r, radii, count);
+  upload_arr(&d_m, materials, count);
+  upload_arr(&d_b, buffer, 1);
 }
 
-void move_array_to_device(float **x, float **y, float **z, float **r,
-                          size_t **m, size_t count) {
-  move(x, y, z, r, m, count);
+void move_fb_to_host(FrameBuffer *b, FrameBuffer *d_b) {
+  CUDA_CHECK(cudaMemcpy(b, d_b, sizeof(FrameBuffer), cudaMemcpyDeviceToHost));
 }

@@ -19,8 +19,10 @@ void cuda_render(const Camera *camera, const SphereBuffer *spheres,
                  const Material *materials, void *rng, FrameBuffer *buffer,
                  size_t width, size_t height);
 
-void move_array_to_device(float **x, float **y, float **z, float **r,
-                          size_t **m, size_t count);
+void move_to_device(float **x, float **y, float **z, float **radii,
+                    size_t **materials, FrameBuffer **buffer, size_t count);
+
+void move_fb_to_host(FrameBuffer *b, FrameBuffer *d_b);
 
 void curand_malloc(void **state);
 

@@ -32,7 +32,8 @@ struct AppState {
   std::unique_ptr<Camera> camera;
   std::unique_ptr<std::vector<Material>> materials;
   std::unique_ptr<SphereBuffer> spheres;
-  std::unique_ptr<FrameBuffer> buffer;
+  std::unique_ptr<FrameBuffer> cpu_buffer;
+  FrameBuffer *gpu_buffer;
   void *rng_states; // curandState*
 };
 
@@ -91,11 +92,13 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
   state->materials = std::make_unique<std::vector<Material>>();
 
   auto spheres{add_scene_one(*state->materials.get())};
+  state->cpu_buffer = std::make_unique<FrameBuffer>();
+  state->gpu_buffer = state->cpu_buffer.get();
 
-  move_array_to_device(&spheres.center_x, &spheres.center_y, &spheres.center_z,
-                       &spheres.radii, &spheres.materials, spheres.size);
+  move_to_device(&spheres.center_x, &spheres.center_y, &spheres.center_z,
+                 &spheres.radii, &spheres.materials, &state->gpu_buffer,
+                 spheres.size);
   state->spheres = std::make_unique<SphereBuffer>(spheres);
-  state->buffer = std::make_unique<FrameBuffer>();
 
   curand_malloc(&state->rng_states);
   cuda_rng_init(state->rng_states, SEED);
@@ -173,18 +176,19 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
   if (cuda_on) {
     cuda_render(state->camera.get(), state->spheres.get(),
-                state->materials->data(), state->rng_states,
-                state->buffer.get(), WIDTH, HEIGHT);
+                state->materials->data(), state->rng_states, state->gpu_buffer,
+                WIDTH, HEIGHT);
+    move_fb_to_host(state->cpu_buffer.get(), state->gpu_buffer);
   } else {
     cpu_render(*state->camera, *state->spheres, *state->materials,
-               *state->buffer);
+               *state->cpu_buffer);
   }
 
   void *pixels{};
   int pitch{};
 
   if (SDL_LockTexture(state->texture.get(), NULL, &pixels, &pitch)) {
-    std::memcpy(pixels, &state->buffer->pixels,
+    std::memcpy(pixels, &state->cpu_buffer->pixels,
                 static_cast<size_t>(pitch) * HEIGHT);
     SDL_UnlockTexture(state->texture.get());
   }
