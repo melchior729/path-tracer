@@ -55,6 +55,11 @@ struct Camera {
 
   constexpr void move(const Vec3 &v) { this->move(v.x(), v.y(), v.z()); }
 
+  constexpr void place_center() {
+    this->center = {0, 0, 0};
+    this->look_at = {0, 0, -1000};
+  }
+
 private:
   Point3 first_pixel;
   Vec3 u, v, w;

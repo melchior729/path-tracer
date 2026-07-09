@@ -132,6 +132,9 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     case SDLK_F:
       state->camera->move_y(-speed);
       break;
+    case SDLK_H:
+      state->camera->place_center();
+      break;
     case SDLK_C:
       cuda_on = !cuda_on;
       break;
