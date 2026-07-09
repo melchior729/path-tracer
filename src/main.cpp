@@ -29,7 +29,8 @@ struct AppState {
   std::unique_ptr<SDL_Window, SDL_Deleter> window;
   std::unique_ptr<SDL_Renderer, SDL_Deleter> renderer;
   std::unique_ptr<SDL_Texture, SDL_Deleter> texture;
-  std::unique_ptr<Camera> camera;
+  std::unique_ptr<Camera> cpu_camera;
+  Camera *gpu_camera;
   std::unique_ptr<std::vector<Material>> materials;
   std::unique_ptr<SphereBuffer> spheres;
   std::unique_ptr<FrameBuffer> cpu_buffer;
@@ -88,16 +89,19 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
   state->window.reset(w);
   state->renderer.reset(r);
   state->texture.reset(t);
-  state->camera = std::make_unique<Camera>();
-  state->materials = std::make_unique<std::vector<Material>>();
+  state->cpu_camera = std::make_unique<Camera>();
+  state->gpu_camera = cuda_malloc_camera();
 
+  state->materials = std::make_unique<std::vector<Material>>();
   auto spheres{add_scene_one(*state->materials.get())};
   state->cpu_buffer = std::make_unique<FrameBuffer>();
-  state->gpu_buffer = state->cpu_buffer.get();
+  state->gpu_buffer =
 
-  move_to_device(&spheres.center_x, &spheres.center_y, &spheres.center_z,
-                 &spheres.radii, &spheres.materials, &state->gpu_buffer,
-                 spheres.size);
+      // spherebuffer pointers point to device memory
+      move_to_device(&spheres.center_x, &spheres.center_y, &spheres.center_z,
+                     &spheres.radii, &spheres.materials, &state->gpu_buffer,
+                     spheres.size);
+
   state->spheres = std::make_unique<SphereBuffer>(spheres);
 
   curand_malloc(&state->rng_states);
@@ -118,25 +122,25 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
   if (event->type == SDL_EVENT_KEY_DOWN) {
     switch (event->key.key) {
     case SDLK_W:
-      state->camera->move_z(-speed);
+      state->cpu_camera->move_z(-speed);
       break;
     case SDLK_S:
-      state->camera->move_z(speed);
+      state->cpu_camera->move_z(speed);
       break;
     case SDLK_A:
-      state->camera->move_x(-speed);
+      state->cpu_camera->move_x(-speed);
       break;
     case SDLK_D:
-      state->camera->move_x(speed);
+      state->cpu_camera->move_x(speed);
       break;
     case SDLK_R:
-      state->camera->move_y(speed);
+      state->cpu_camera->move_y(speed);
       break;
     case SDLK_F:
-      state->camera->move_y(-speed);
+      state->cpu_camera->move_y(-speed);
       break;
     case SDLK_H:
-      state->camera->place_center();
+      state->cpu_camera->place_center();
       break;
     case SDLK_C:
       cuda_on = !cuda_on;
@@ -144,9 +148,11 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     case SDLK_I:
       show_overlay = !show_overlay;
       break;
-      state->camera->init();
     }
   }
+
+  state->cpu_camera->init();
+  cuda_copy_camera_to_device(state->gpu_camera, state->cpu_camera.get());
 
   return SDL_APP_CONTINUE;
 }
@@ -175,12 +181,12 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
   auto state{static_cast<AppState *>(appstate)};
 
   if (cuda_on) {
-    cuda_render(state->camera.get(), state->spheres.get(),
+    cuda_render(state->gpu_camera, state->spheres.get(),
                 state->materials->data(), state->rng_states, state->gpu_buffer,
                 WIDTH, HEIGHT);
     move_fb_to_host(state->cpu_buffer.get(), state->gpu_buffer);
   } else {
-    cpu_render(*state->camera, *state->spheres, *state->materials,
+    cpu_render(*state->cpu_camera, *state->spheres, *state->materials,
                *state->cpu_buffer);
   }
 

@@ -64,7 +64,6 @@ __device__ static Vec3 ray_color(Ray ray, const SphereBuffer *spheres,
     case MaterialType::Dielectric:
       if (!material.dielectric.scatter(incoming, record, rand_float,
                                        attenuation, scattered)) {
-        ;
         return mix_with_sky(incoming, acc_attenuation);
       }
       break;
@@ -143,4 +142,13 @@ void move_to_device(float **x, float **y, float **z, float **radii,
 
 void move_fb_to_host(FrameBuffer *b, FrameBuffer *d_b) {
   CUDA_CHECK(cudaMemcpy(b, d_b, sizeof(FrameBuffer), cudaMemcpyDeviceToHost));
+}
+Camera *cuda_malloc_camera() {
+  Camera *camera;
+  CUDA_CHECK(cudaMalloc((void **)&camera, sizeof(Camera)));
+  return camera;
+}
+
+void cuda_copy_camera_to_device(Camera *d_c, Camera *c) {
+  CUDA_CHECK(cudaMemcpy(d_c, c, sizeof(Camera), cudaMemcpyHostToDevice));
 }
