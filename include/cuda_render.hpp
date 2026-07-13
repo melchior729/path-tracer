@@ -19,12 +19,12 @@ void cuda_render(const Camera *camera, const SphereBuffer *spheres,
                  const Material *materials, void *rng, FrameBuffer *buffer,
                  size_t width, size_t height);
 
+void move_to_device(SphereBuffer *cpu_spheres, SphereBuffer **gpu_spheres,
+                    FrameBuffer **buffer);
+
 Camera *cuda_malloc_camera();
 
 void cuda_copy_camera_to_device(Camera *d_c, Camera *c);
-
-void move_to_device(float **x, float **y, float **z, float **radii,
-                    size_t **materials, FrameBuffer **buffer, size_t count);
 
 void move_fb_to_host(FrameBuffer *b, FrameBuffer *d_b);
 

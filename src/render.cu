@@ -1,7 +1,5 @@
-
-#include "cuda_hit.cuh"
-
 #include "config.hpp"
+#include "cuda_hit.cuh"
 #include "cuda_render.hpp"
 #include "frame_buffer.hpp"
 #include "interval.hpp"
@@ -139,8 +137,8 @@ static __global__ void set_gpu_sphere_members(SphereBuffer *gpu_spheres,
   gpu_spheres->size = size;
 }
 
-void move_to_device(SphereBuffer *cpu_spheres, SphereBuffer *gpu_spheres,
-                    FrameBuffer *buffer) {
+void move_to_device(SphereBuffer *cpu_spheres, SphereBuffer **gpu_spheres,
+                    FrameBuffer **buffer) {
   float *d_x;
   float *d_y;
   float *d_z;
@@ -154,11 +152,10 @@ void move_to_device(SphereBuffer *cpu_spheres, SphereBuffer *gpu_spheres,
   upload_arr(&d_r, cpu_spheres->radii, size);
   upload_arr(&d_m, cpu_spheres->materials, size);
 
-  CUDA_CHECK(cudaMalloc((void **)&gpu_spheres, sizeof(FrameBuffer)));
-  set_gpu_sphere_members<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(
-      gpu_spheres, d_x, d_y, d_z, d_r, d_m, size);
+  CUDA_CHECK(cudaMalloc((void **)gpu_spheres, sizeof(SphereBuffer)));
+  set_gpu_sphere_members<<<1, 1>>>(*gpu_spheres, d_x, d_y, d_z, d_r, d_m, size);
 
-  CUDA_CHECK(cudaMalloc((void **)&buffer, sizeof(FrameBuffer)));
+  CUDA_CHECK(cudaMalloc((void **)buffer, sizeof(FrameBuffer)));
 }
 
 void move_fb_to_host(FrameBuffer *b, FrameBuffer *d_b) {

@@ -33,7 +33,8 @@ struct AppState {
   std::unique_ptr<Camera> cpu_camera;
   Camera *gpu_camera;
   std::unique_ptr<std::vector<Material>> materials;
-  std::unique_ptr<SphereBuffer> spheres;
+  std::unique_ptr<SphereBuffer> cpu_spheres;
+  SphereBuffer *gpu_spheres;
   std::unique_ptr<FrameBuffer> cpu_buffer;
   FrameBuffer *gpu_buffer;
   void *rng_states; // curandState*
@@ -66,13 +67,11 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
 
   state->materials = std::make_unique<std::vector<Material>>();
   auto spheres{simple_scene(*state->materials.get())};
+  state->cpu_spheres = std::make_unique<SphereBuffer>(spheres);
   state->cpu_buffer = std::make_unique<FrameBuffer>();
 
-  move_to_device(&spheres.center_x, &spheres.center_y, &spheres.center_z,
-                 &spheres.radii, &spheres.materials, &state->gpu_buffer,
-                 spheres.size);
-
-  state->spheres = std::make_unique<SphereBuffer>(spheres);
+  move_to_device(state->cpu_spheres.get(), &state->gpu_spheres,
+                 &state->gpu_buffer);
 
   curand_malloc(&state->rng_states);
   cuda_rng_init(state->rng_states, SEED);
@@ -151,12 +150,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
   auto state{static_cast<AppState *>(appstate)};
 
   if (cuda_on) {
-    cuda_render(state->gpu_camera, state->spheres.get(),
-                state->materials->data(), state->rng_states, state->gpu_buffer,
-                WIDTH, HEIGHT);
+    cuda_render(state->gpu_camera, state->gpu_spheres, state->materials->data(),
+                state->rng_states, state->gpu_buffer, WIDTH, HEIGHT);
     move_fb_to_host(state->cpu_buffer.get(), state->gpu_buffer);
   } else {
-    cpu_render(*state->cpu_camera, *state->spheres, *state->materials,
+    cpu_render(*state->cpu_camera, *state->cpu_spheres, *state->materials,
                *state->cpu_buffer);
   }
 
