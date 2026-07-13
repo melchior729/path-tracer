@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
+
 project(path-tracer LANGUAGES CXX CUDA)
 
 set(CMAKE_CUDA_USE_RESPONSE_FILE_FOR_INCLUDES OFF)
@@ -29,8 +30,14 @@ target_compile_options(main PRIVATE
     $<$<COMPILE_LANGUAGE:CUDA>:${CUDA_FLAGS}>
 )
 
+# allows cuda functions to be in different files
 set_target_properties(main PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 find_package(SDL3 REQUIRED)
 target_link_libraries(main PRIVATE SDL3::SDL3)
+
+# nvtx
+find_package(CUDAToolkit REQUIRED)
+target_link_libraries(main PRIVATE CUDA::toolkit)
+
 target_compile_definitions(main PRIVATE SDL_MAIN_USE_CALLBACKS)
