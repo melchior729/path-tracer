@@ -65,7 +65,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
   state->gpu_camera = cuda_malloc_camera();
 
   state->materials = std::make_unique<std::vector<Material>>();
-  auto spheres{complex_scene(*state->materials.get())};
+  auto spheres{simple_scene(*state->materials.get())};
   state->cpu_buffer = std::make_unique<FrameBuffer>();
 
   move_to_device(&spheres.center_x, &spheres.center_y, &spheres.center_z,
