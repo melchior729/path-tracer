@@ -116,31 +116,49 @@ void cuda_render(const Camera *camera, const SphereBuffer *spheres,
   CUDA_CHECK(cudaDeviceSynchronize());
 }
 
-template <typename T> static void upload_arr(T **dest, T **src, size_t N) {
+// gpu_spheres ptr on host
+//
+// malloc the gpu_spheres on the gpu
+// malloc the things for each of its members.
+
+template <typename T> static void upload_arr(T **dest, T *src, size_t N) {
   auto T_bytes_per_arr{N * sizeof(T)};
   CUDA_CHECK(cudaMalloc((void **)dest, T_bytes_per_arr));
-  CUDA_CHECK(cudaMemcpy(*dest, *src, T_bytes_per_arr, cudaMemcpyHostToDevice));
-  *src = *dest;
+  CUDA_CHECK(cudaMemcpy(*dest, src, T_bytes_per_arr, cudaMemcpyHostToDevice));
 }
 
-void move_to_device(float **x, float **y, float **z, float **radii,
-                    size_t **materials, FrameBuffer **buffer, size_t count) {
+static __global__ void set_gpu_sphere_members(SphereBuffer *gpu_spheres,
+                                              float *d_x, float *d_y,
+                                              float *d_z, float *d_r,
+                                              size_t *d_m, size_t size) {
+  gpu_spheres->center_x = d_x;
+  gpu_spheres->center_y = d_y;
+  gpu_spheres->center_z = d_z;
+  gpu_spheres->radii = d_r;
+  gpu_spheres->materials = d_m;
+  gpu_spheres->size = size;
+}
+
+void move_to_device(SphereBuffer *cpu_spheres, SphereBuffer *gpu_spheres,
+                    FrameBuffer *buffer) {
   float *d_x;
   float *d_y;
   float *d_z;
   float *d_r;
   size_t *d_m;
-  FrameBuffer *d_b;
 
-  upload_arr(&d_x, x, count);
-  upload_arr(&d_y, y, count);
-  upload_arr(&d_z, z, count);
-  upload_arr(&d_r, radii, count);
-  upload_arr(&d_m, materials, count);
+  auto size{cpu_spheres->size};
+  upload_arr(&d_x, cpu_spheres->center_x, size);
+  upload_arr(&d_y, cpu_spheres->center_y, size);
+  upload_arr(&d_z, cpu_spheres->center_z, size);
+  upload_arr(&d_r, cpu_spheres->radii, size);
+  upload_arr(&d_m, cpu_spheres->materials, size);
 
-  auto buffer_size{sizeof(FrameBuffer)};
-  CUDA_CHECK(cudaMalloc((void **)&d_b, buffer_size));
-  *buffer = d_b;
+  CUDA_CHECK(cudaMalloc((void **)&gpu_spheres, sizeof(FrameBuffer)));
+  set_gpu_sphere_members<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(
+      gpu_spheres, d_x, d_y, d_z, d_r, d_m, size);
+
+  CUDA_CHECK(cudaMalloc((void **)&buffer, sizeof(FrameBuffer)));
 }
 
 void move_fb_to_host(FrameBuffer *b, FrameBuffer *d_b) {

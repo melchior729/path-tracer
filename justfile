@@ -14,7 +14,7 @@ build:
     ln -sf build/compile_commands.json .
 
 debug:
-  gdb ./build/main
+  cuda-gdb ./build/main
 
 clean:
   rm -rf build/
