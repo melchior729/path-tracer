@@ -114,11 +114,6 @@ void cuda_render(const Camera *camera, const SphereBuffer *spheres,
   CUDA_CHECK(cudaDeviceSynchronize());
 }
 
-// gpu_spheres ptr on host
-//
-// malloc the gpu_spheres on the gpu
-// malloc the things for each of its members.
-
 template <typename T> static void upload_arr(T **dest, T *src, size_t N) {
   auto T_bytes_per_arr{N * sizeof(T)};
   CUDA_CHECK(cudaMalloc((void **)dest, T_bytes_per_arr));
