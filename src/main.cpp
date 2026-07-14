@@ -76,6 +76,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
                  state->cpu_materials.get()->data(), &state->gpu_materials,
                  &state->gpu_camera, &state->gpu_buffer);
 
+  cuda_copy_camera_to_device(state->gpu_camera, state->cpu_camera.get());
   curand_malloc(&state->rng_states);
   cuda_rng_init(state->rng_states, SEED);
 
