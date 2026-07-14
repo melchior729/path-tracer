@@ -11,11 +11,9 @@ struct Camera {
   Point3 center{0, 0, 0};
   Point3 look_at{0, 0, -100.0f};
 
-  constexpr Camera() { init(); }
+  constexpr Camera() { init_viewport(); }
 
-  constexpr void init() {
-    sample_scale = 1.0f / SAMPLE_COUNT;
-
+  constexpr void init_viewport() {
     w = norm(center - look_at);
     u = norm(up.cross(w));
     v = norm(u.cross(w));
@@ -30,11 +28,12 @@ struct Camera {
     delta_u = vp_u / WIDTH;
     delta_v = vp_v / HEIGHT;
 
-    auto top_left{center - w * focal_len - vp_u / 2 - vp_v / 2};
-    first_pixel = top_left + 0.5 * (delta_u + delta_v);
+    auto vp_top_left{center - w * focal_len - vp_u / 2 - vp_v / 2};
+    first_pixel = vp_top_left + 0.5 * (delta_u + delta_v);
   }
 
-  constexpr Ray HOSTDEV get_ray(const Vec3 offset, size_t i, size_t j) const {
+  constexpr Ray HOSTDEV ray_at_pixel(const Vec3 offset, size_t i,
+                                     size_t j) const {
     auto sample{first_pixel + ((i + offset.x()) * delta_u) +
                 ((j + offset.y()) * delta_v)};
     auto dir{sample - center};
@@ -47,22 +46,12 @@ struct Camera {
 
   constexpr void move_z(float z) { center.z() += z; }
 
-  constexpr void move(float x, float y, float z) {
-    this->move_x(x);
-    this->move_y(y);
-    this->move_z(z);
-  }
+  constexpr void move_to_origin() { this->center = {0, 0, 0}; }
 
-  constexpr void move(const Vec3 &v) { this->move(v.x(), v.y(), v.z()); }
-
-  constexpr void place_center() {
-    this->center = {0, 0, 0};
-    this->look_at = {0, 0, -1000};
-  }
+  constexpr void look_neg_z() { this->look_at = {0, 0, -1000}; }
 
 private:
   Point3 first_pixel;
   Vec3 u, v, w;
   Vec3 delta_u, delta_v;
-  float sample_scale;
 };

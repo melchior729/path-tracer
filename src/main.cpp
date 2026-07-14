@@ -113,7 +113,8 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
       state->cpu_camera->move_y(-speed);
       break;
     case SDLK_H:
-      state->cpu_camera->place_center();
+      state->cpu_camera->move_to_origin();
+      state->cpu_camera->look_neg_z();
       break;
     case SDLK_C:
       cuda_on = !cuda_on;
@@ -124,7 +125,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     }
   }
 
-  state->cpu_camera->init();
+  state->cpu_camera->init_viewport();
   cuda_copy_camera_to_device(state->gpu_camera, state->cpu_camera.get());
   return SDL_APP_CONTINUE;
 }

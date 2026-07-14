@@ -1,10 +1,10 @@
 #include "config.hpp"
-#include "cuda_hit.cuh"
 #include "cuda_render.hpp"
 #include "frame_buffer.hpp"
 #include "interval.hpp"
 #include "material.hpp"
 #include "sphere_buffer.hpp"
+#include "sphere_hit.hpp"
 #include "util.hpp"
 #include "vec3.hpp"
 #include <cassert>
@@ -39,7 +39,7 @@ __device__ static Vec3 ray_color(Ray ray, const SphereBuffer *spheres,
 
   for (size_t i{}; i < depth; ++i) {
     HitRecord record;
-    if (!cuda_hit_spheres(spheres, incoming, Interval{0.001, INF}, &record)) {
+    if (!hit_spheres(spheres, incoming, Interval{0.001, INF}, &record)) {
       return mix_with_sky(incoming, acc_attenuation);
     }
 
@@ -87,7 +87,7 @@ __global__ void render(const Camera *camera, const SphereBuffer *spheres,
 
   Vec3 col;
   for (size_t s{}; s < SAMPLE_COUNT; ++s) {
-    auto ray{camera->get_ray(
+    auto ray{camera->ray_at_pixel(
         sample_square(random_float(rng), random_float(rng)), i, j)};
     col += ray_color(ray, spheres, materials, rng, MAX_DEPTH);
   }

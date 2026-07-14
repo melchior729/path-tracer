@@ -8,8 +8,6 @@
 
 #include <limits>
 
-inline constexpr char TITLE[]{"Abhay's Path Tracer"};
-
 inline constexpr auto WIDTH{1280};
 inline constexpr auto HEIGHT{720};
 inline constexpr auto ASPECT{static_cast<float>(WIDTH) / HEIGHT};
@@ -21,3 +19,4 @@ inline constexpr std::size_t MAX_DEPTH{20};
 inline constexpr std::size_t SEED{0};
 
 inline constexpr auto INF{std::numeric_limits<float>::infinity()};
+inline constexpr char TITLE[]{"Abhay's Path Tracer"};

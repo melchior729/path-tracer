@@ -1,13 +1,13 @@
 #pragma once
 
 #include "camera.hpp"
-#include "cpu_hit.hpp"
 #include "frame_buffer.hpp"
 #include "interval.hpp"
 #include "material.hpp"
 #include "random.hpp"
 #include "ray.hpp"
 #include "sphere_buffer.hpp"
+#include "sphere_hit.hpp"
 #include "util.hpp"
 #include <cassert>
 
@@ -18,7 +18,7 @@ static Vec3 ray_color(const Ray &ray, const SphereBuffer &spheres,
 
   for (size_t i{}; i < depth; ++i) {
     HitRecord record;
-    if (!cpu_hit_spheres(spheres, incoming, Interval{0.001, INF}, record)) {
+    if (!hit_spheres(&spheres, incoming, Interval{0.001, INF}, &record)) {
       return mix_with_sky(incoming, acc_attenuation);
     }
 
@@ -62,8 +62,8 @@ inline void cpu_render(const Camera &camera, const SphereBuffer &spheres,
     for (size_t i{}; i < WIDTH; ++i) {
       Vec3 col;
       for (size_t s{}; s < SAMPLE_COUNT; ++s) {
-        auto ray{camera.get_ray(sample_square(random_float(), random_float()),
-                                i, j)};
+        auto ray{camera.ray_at_pixel(
+            sample_square(random_float(), random_float()), i, j)};
         col += ray_color(ray, spheres, materials, MAX_DEPTH);
       }
 

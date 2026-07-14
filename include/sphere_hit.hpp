@@ -1,19 +1,22 @@
+#pragma once
+
 #include "hit_record.hpp"
 #include "interval.hpp"
 #include "sphere_buffer.hpp"
 
-__device__ bool hit_sphere(const SphereBuffer *spheres, Ray ray, size_t i,
-                           Interval interval, HitRecord *record) {
+static HOSTDEV bool hit_sphere(const SphereBuffer *spheres, Ray ray, size_t i,
+                               Interval interval, HitRecord *record) {
   auto x{spheres->center_x[i]};
   auto y{spheres->center_y[i]};
   auto z{spheres->center_z[i]};
   auto r{spheres->radii[i]};
-
   Vec3 center{x, y, z};
 
   auto oc{center - ray.origin()};
   auto dir{ray.direction()};
 
+  // this is just the quadratic formula, but b = the regular b^2
+  // this can happen because it simplifes from the dot product
   auto a{dir.len_sq()};
   auto b{dir.dot(oc)};
   auto c{oc.len_sq() - r * r};
@@ -41,8 +44,8 @@ __device__ bool hit_sphere(const SphereBuffer *spheres, Ray ray, size_t i,
   return true;
 }
 
-__device__ bool cuda_hit_spheres(const SphereBuffer *spheres, Ray ray,
-                                 Interval interval, HitRecord *record) {
+inline HOSTDEV bool hit_spheres(const SphereBuffer *spheres, Ray ray,
+                                Interval interval, HitRecord *record) {
   HitRecord temp;
   auto closest{interval.max};
   auto hit{false};
