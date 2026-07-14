@@ -33,7 +33,8 @@ struct AppState {
   std::unique_ptr<SDL_Texture, SDL_Deleter> texture;
   std::unique_ptr<Camera> cpu_camera;
   Camera *gpu_camera;
-  std::unique_ptr<std::vector<Material>> materials;
+  std::unique_ptr<std::vector<Material>> cpu_materials;
+  Material *gpu_materials;
   std::unique_ptr<SphereBuffer> cpu_spheres;
   SphereBuffer *gpu_spheres;
   std::unique_ptr<FrameBuffer> cpu_buffer;
@@ -63,20 +64,18 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
   state->window.reset(w);
   state->renderer.reset(r);
   state->texture.reset(t);
-  state->cpu_camera = std::make_unique<Camera>();
-  // here
-  state->gpu_camera = cuda_malloc_camera();
 
-  state->materials = std::make_unique<std::vector<Material>>();
-  auto spheres{simple_scene(*state->materials.get())};
+  state->cpu_camera = std::make_unique<Camera>();
+
+  state->cpu_materials = std::make_unique<std::vector<Material>>();
+  auto spheres{simple_scene(*state->cpu_materials.get())};
   state->cpu_spheres = std::make_unique<SphereBuffer>(spheres);
   state->cpu_buffer = std::make_unique<FrameBuffer>();
 
-  // here
   move_to_device(state->cpu_spheres.get(), &state->gpu_spheres,
-                 &state->gpu_buffer);
+                 state->cpu_materials.get()->data(), &state->gpu_materials,
+                 &state->gpu_camera, &state->gpu_buffer);
 
-  // here
   curand_malloc(&state->rng_states);
   cuda_rng_init(state->rng_states, SEED);
 
@@ -125,9 +124,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
   }
 
   state->cpu_camera->init();
-  // here
   cuda_copy_camera_to_device(state->gpu_camera, state->cpu_camera.get());
-
   return SDL_APP_CONTINUE;
 }
 
@@ -154,13 +151,12 @@ static void draw_overlay(AppState *state) {
 SDL_AppResult SDL_AppIterate(void *appstate) {
   auto state{static_cast<AppState *>(appstate)};
 
-  // here
   if (cuda_on) {
-    cuda_render(state->gpu_camera, state->gpu_spheres, state->materials->data(),
+    cuda_render(state->gpu_camera, state->gpu_spheres, state->gpu_materials,
                 state->rng_states, state->gpu_buffer, WIDTH, HEIGHT);
     move_fb_to_host(state->cpu_buffer.get(), state->gpu_buffer);
   } else {
-    cpu_render(*state->cpu_camera, *state->cpu_spheres, *state->materials,
+    cpu_render(*state->cpu_camera, *state->cpu_spheres, *state->cpu_materials,
                *state->cpu_buffer);
   }
 

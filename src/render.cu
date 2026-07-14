@@ -133,7 +133,8 @@ static __global__ void set_gpu_sphere_members(SphereBuffer *gpu_spheres,
 }
 
 void move_to_device(SphereBuffer *cpu_spheres, SphereBuffer **gpu_spheres,
-                    FrameBuffer **buffer) {
+                    Material *cpu_materials, Material **gpu_materials,
+                    Camera **gpu_camera, FrameBuffer **buffer) {
   float *d_x;
   float *d_y;
   float *d_z;
@@ -146,21 +147,17 @@ void move_to_device(SphereBuffer *cpu_spheres, SphereBuffer **gpu_spheres,
   upload_arr(&d_z, cpu_spheres->center_z, size);
   upload_arr(&d_r, cpu_spheres->radii, size);
   upload_arr(&d_m, cpu_spheres->materials, size);
+  upload_arr(gpu_materials, cpu_materials, size);
 
   CUDA_CHECK(cudaMalloc((void **)gpu_spheres, sizeof(SphereBuffer)));
   set_gpu_sphere_members<<<1, 1>>>(*gpu_spheres, d_x, d_y, d_z, d_r, d_m, size);
 
+  CUDA_CHECK(cudaMalloc((void **)gpu_camera, sizeof(Camera)));
   CUDA_CHECK(cudaMalloc((void **)buffer, sizeof(FrameBuffer)));
 }
 
 void move_fb_to_host(FrameBuffer *b, FrameBuffer *d_b) {
   CUDA_CHECK(cudaMemcpy(b, d_b, sizeof(FrameBuffer), cudaMemcpyDeviceToHost));
-}
-
-Camera *cuda_malloc_camera() {
-  Camera *camera;
-  CUDA_CHECK(cudaMalloc((void **)&camera, sizeof(Camera)));
-  return camera;
 }
 
 void cuda_copy_camera_to_device(Camera *d_c, Camera *c) {
