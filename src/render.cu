@@ -1,12 +1,9 @@
 #include "config.hpp"
 #include "cuda_render.hpp"
 #include "frame_buffer.hpp"
-#include "interval.hpp"
 #include "material.hpp"
+#include "render.cuh"
 #include "sphere_buffer.hpp"
-#include "sphere_hit.hpp"
-#include "util.hpp"
-#include "vec3.hpp"
 #include <cassert>
 #include <curand_kernel.h>
 #include <stdio.h>
@@ -18,99 +15,24 @@ static constexpr auto BLOCK_HEIGHT{HEIGHT / BLOCK_DIM};
 static constexpr dim3 THREADS_PER_BLOCK{BLOCK_DIM, BLOCK_DIM};
 static constexpr dim3 NUM_BLOCKS{BLOCK_WIDTH, BLOCK_HEIGHT};
 
-__global__ void rng_init(curandState *rng, size_t seed) {
-  size_t i{blockDim.x * blockIdx.x + threadIdx.x};
-  curand_init(seed, i, 0, &rng[i]);
-}
-
-__device__ static float random_float(curandState *rng) {
-  size_t i{blockDim.x * blockIdx.x + threadIdx.x};
-  auto state{rng[i]};
-  auto rand{curand_uniform(&state)};
-  rng[i] = state;
-  return rand;
-}
-
-__device__ static Vec3 ray_color(Ray ray, const SphereBuffer *spheres,
-                                 const Material *materials, curandState *rng,
-                                 size_t depth) {
-  Ray incoming{ray};
-  Vec3 acc_attenuation{WHITE};
-
-  for (size_t i{}; i < depth; ++i) {
-    HitRecord record;
-    if (!hit_spheres(spheres, incoming, Interval{0.001, INF}, &record)) {
-      return mix_with_sky(incoming, acc_attenuation);
-    }
-
-    Ray scattered;
-    Vec3 attenuation;
-    auto material{materials[record.mat_idx]};
-    auto rand_float{random_float(rng)};
-    Vec3 rand_vec{rand_float, random_float(rng), random_float(rng)};
-
-    switch (material.type) {
-    case MaterialType::Lambertian:
-      material.lambertian.scatter(record, rand_vec, attenuation, scattered);
-      break;
-    case MaterialType::Metal:
-      if (!material.metal.scatter(incoming, record, rand_vec, attenuation,
-                                  scattered)) {
-        return mix_with_sky(incoming, acc_attenuation);
-      }
-      break;
-    case MaterialType::Dielectric:
-      if (!material.dielectric.scatter(incoming, record, rand_float,
-                                       attenuation, scattered)) {
-        return mix_with_sky(incoming, acc_attenuation);
-      }
-      break;
-    default:
-      assert(false);
-    }
-
-    incoming = scattered;
-    acc_attenuation *= attenuation;
-  }
-
-  return {};
-}
-
-__global__ void render(const Camera *camera, const SphereBuffer *spheres,
-                       const Material *materials, curandState *rng,
-                       FrameBuffer *buffer, size_t width, size_t height) {
+__global__ void check_and_render(const Camera *camera,
+                                 const SphereBuffer *spheres,
+                                 const Material *materials, FrameBuffer *buffer,
+                                 curandState *generator) {
   size_t i{blockDim.x * blockIdx.x + threadIdx.x};
   size_t j{blockDim.y * blockIdx.y + threadIdx.y};
-  if (i >= width || j >= height) {
+  if (i >= WIDTH || j >= HEIGHT) {
     return;
   }
 
-  Vec3 col;
-  for (size_t s{}; s < SAMPLE_COUNT; ++s) {
-    auto ray{camera->ray_at_pixel(
-        sample_square(random_float(rng), random_float(rng)), i, j)};
-    col += ray_color(ray, spheres, materials, rng, MAX_DEPTH);
-  }
-
-  col /= SAMPLE_COUNT;
-  auto writtable{gamma_vec(col)};
-  buffer->set(i, j, Color{writtable});
-}
-
-void curand_malloc(void **state) {
-  CUDA_CHECK(cudaMalloc(state, sizeof(curandState) * BLOCK_WIDTH *
-                                   BLOCK_HEIGHT * BLOCK_DIM));
-}
-
-void cuda_rng_init(void *state, size_t seed) {
-  rng_init<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>((curandState *)state, seed);
+  render(camera, spheres, materials, buffer, i, j, generator);
 }
 
 void cuda_render(const Camera *camera, const SphereBuffer *spheres,
-                 const Material *materials, void *rng, FrameBuffer *buffer,
-                 size_t width, size_t height) {
-  render<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(
-      camera, spheres, materials, (curandState *)rng, buffer, width, height);
+                 const Material *materials, FrameBuffer *buffer,
+                 void *generator) {
+  check_and_render<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(
+      camera, spheres, materials, buffer, (curandState *)generator);
   CUDA_CHECK(cudaDeviceSynchronize());
 }
 
@@ -151,7 +73,6 @@ void move_to_device(SphereBuffer *cpu_spheres, SphereBuffer **gpu_spheres,
 
   CUDA_CHECK(cudaMalloc((void **)gpu_spheres, sizeof(SphereBuffer)));
   set_gpu_sphere_members<<<1, 1>>>(*gpu_spheres, d_x, d_y, d_z, d_r, d_m, size);
-
   CUDA_CHECK(cudaMalloc((void **)gpu_camera, sizeof(Camera)));
   CUDA_CHECK(cudaMalloc((void **)buffer, sizeof(FrameBuffer)));
 }
@@ -162,4 +83,26 @@ void move_fb_to_host(FrameBuffer *b, FrameBuffer *d_b) {
 
 void cuda_copy_camera_to_device(Camera *d_c, Camera *c) {
   CUDA_CHECK(cudaMemcpy(d_c, c, sizeof(Camera), cudaMemcpyHostToDevice));
+}
+
+void curand_malloc(void **state) {
+  CUDA_CHECK(cudaMalloc(state, sizeof(curandState) * BLOCK_WIDTH *
+                                   BLOCK_HEIGHT * BLOCK_DIM));
+}
+
+__global__ void rng_init(curandState *rng, size_t seed) {
+  size_t i{blockDim.x * blockIdx.x + threadIdx.x};
+  curand_init(seed, i, 0, &rng[i]);
+}
+
+void cuda_rng_init(void *state, size_t seed) {
+  rng_init<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>((curandState *)state, seed);
+}
+
+__device__ float rand_float(curandState *generator) {
+  size_t i{blockDim.x * blockIdx.x + threadIdx.x};
+  auto state{generator[i]};
+  auto rand{curand_uniform(&state)};
+  generator[i] = state;
+  return rand;
 }

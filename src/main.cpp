@@ -1,3 +1,4 @@
+#include <random>
 #define SDL_MAIN_USE_CALLBACKS 1
 
 #include "SDL3/SDL_init.h"
@@ -5,10 +6,10 @@
 #include "SDL3/SDL_render.h"
 #include "SDL3/SDL_timer.h"
 #include "config.hpp"
-#include "cpu_render.hpp"
 #include "cuda_render.hpp"
 #include "frame_buffer.hpp"
 #include "nvtx3/nvtx3.hpp"
+#include "render.cuh"
 #include "scenes.hpp"
 #include "sphere_buffer.hpp"
 #include <SDL3/SDL_events.h>
@@ -39,7 +40,8 @@ struct AppState {
   SphereBuffer *gpu_spheres;
   std::unique_ptr<FrameBuffer> cpu_buffer;
   FrameBuffer *gpu_buffer;
-  void *rng_states; // curandState*
+  std::unique_ptr<std::mt19937> cpu_generator;
+  void *gpu_generator; // curandState*
 };
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
@@ -77,8 +79,11 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
                  &state->gpu_camera, &state->gpu_buffer);
 
   cuda_copy_camera_to_device(state->gpu_camera, state->cpu_camera.get());
-  curand_malloc(&state->rng_states);
-  cuda_rng_init(state->rng_states, SEED);
+
+  state->cpu_generator = std::make_unique<std::mt19937>();
+
+  curand_malloc(&state->gpu_generator);
+  cuda_rng_init(state->gpu_generator, SEED);
 
   *appstate = state.release();
   return SDL_APP_CONTINUE;
@@ -155,11 +160,12 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
   if (cuda_on) {
     cuda_render(state->gpu_camera, state->gpu_spheres, state->gpu_materials,
-                state->rng_states, state->gpu_buffer, WIDTH, HEIGHT);
+                state->gpu_buffer, state->gpu_generator);
     move_fb_to_host(state->cpu_buffer.get(), state->gpu_buffer);
   } else {
-    cpu_render(*state->cpu_camera, *state->cpu_spheres, *state->cpu_materials,
-               *state->cpu_buffer);
+    cpu_render(state->cpu_camera.get(), state->cpu_spheres.get(),
+               state->cpu_materials.get()->data(), state->cpu_buffer.get(),
+               state->cpu_generator.get());
   }
 
   void *pixels{};

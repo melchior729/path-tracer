@@ -20,10 +20,6 @@
   call();                                                                      \
   nvtxRangePop();
 
-void cuda_render(const Camera *camera, const SphereBuffer *spheres,
-                 const Material *materials, void *rng, FrameBuffer *buffer,
-                 size_t width, size_t height);
-
 void move_to_device(SphereBuffer *cpu_spheres, SphereBuffer **gpu_spheres,
                     Material *cpu_materials, Material **gpu_materials,
                     Camera **gpu_camera, FrameBuffer **buffer);

@@ -1,31 +1,40 @@
 #pragma once
 
+#include "gpu_random.cuh" // IWYU pragma: keep
 #include "vec3.hpp"
 #include <random>
 
-inline float random_float() {
-  static std::uniform_real_distribution<double> distribution(0.0, 1.0);
-  static std::mt19937 generator;
-  return distribution(generator);
+template <typename T> inline HOSTDEV float random_float(T *generator) {
+#ifdef __CUDA_ARCH__
+  rand_float((curandState *)generator);
+#else
+  auto gen{static_cast<std::mt19937>(*generator)};
+  std::uniform_real_distribution<float> distribution(0.0, 1.0);
+  return distribution(gen);
+#endif
+  return 0.0f;
 }
 
-inline float random_float(float min, float max) {
-  return min + (max - min) * random_float();
+template <typename T>
+inline float random_float(float min, float max, T *generator) {
+  return min + (max - min) * random_float(generator);
 }
 
-inline Vec3 random_vec3() {
-  return {random_float(), random_float(), random_float()};
+template <typename T> inline Vec3 random_vec3(T *generator) {
+  return {random_float(generator), random_float(generator),
+          random_float(generator)};
 }
 
-inline Vec3 random_vec3(float min, float max) {
-  return {random_float(min, max), random_float(min, max),
-          random_float(min, max)};
+template <typename T>
+inline Vec3 random_vec3(float min, float max, T *generator) {
+  return {random_float(min, max, generator), random_float(min, max, generator),
+          random_float(min, max, generator)};
 }
 
-inline Vec3 random_norm() {
+template <typename T> inline Vec3 random_norm(T *generator) {
   static constexpr auto epilson{1e-45f};
   while (true) {
-    auto v{random_vec3(-1.0f, 1.0f)};
+    auto v{random_vec3(-1.0f, 1.0f, generator)};
     auto len_sq{v.len_sq()};
     if (len_sq <= 1.0f && len_sq > epilson) {
       return v;
@@ -33,7 +42,8 @@ inline Vec3 random_norm() {
   }
 }
 
-inline Vec3 random_on_hemisphere(Vec3 normal) {
-  auto v{random_norm()};
+template <typename T>
+inline Vec3 random_on_hemisphere(Vec3 normal, T *generator) {
+  auto v{random_norm(generator)};
   return v.dot(normal) > 0 ? v : -v;
 }
