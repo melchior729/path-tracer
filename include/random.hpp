@@ -6,7 +6,7 @@
 
 template <typename T> inline HOSTDEV float random_float(T *generator) {
 #ifdef __CUDA_ARCH__
-  rand_float((curandState *)generator);
+  return rand_float((curandState *)generator);
 #else
   auto gen{static_cast<std::mt19937>(*generator)};
   std::uniform_real_distribution<float> distribution(0.0, 1.0);
