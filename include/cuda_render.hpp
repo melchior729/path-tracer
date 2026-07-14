@@ -15,6 +15,11 @@
     }                                                                          \
   } while (0)
 
+#define CUDA_PROFILE(call, region_name)                                        \
+  nvtxRangePush(region_name);                                                  \
+  call();                                                                      \
+  nvtxRangePop();
+
 void cuda_render(const Camera *camera, const SphereBuffer *spheres,
                  const Material *materials, void *rng, FrameBuffer *buffer,
                  size_t width, size_t height);
