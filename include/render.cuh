@@ -8,6 +8,7 @@
 #include "ray.hpp"
 #include "sphere_buffer.hpp"
 #include "sphere_hit.hpp"
+#include "state.hpp"
 #include "util.hpp"
 #include <cassert>
 
@@ -73,16 +74,14 @@ inline HOSTDEV void render(const Camera *camera, const SphereBuffer *spheres,
   buffer->set(i, j, Color{writtable});
 }
 
-inline void cpu_render(const Camera *camera, const SphereBuffer *spheres,
-                       const Material *materials, FrameBuffer *buffer,
-                       std::mt19937 *generator) {
+inline void cpu_render(CPUState *cpu) {
   for (size_t j{}; j < HEIGHT; ++j) {
     for (size_t i{}; i < WIDTH; ++i) {
-      render(camera, spheres, materials, buffer, i, j, generator);
+      render(cpu->camera.get(), cpu->spheres.get(),
+             cpu->materials.get()->data(), cpu->buffer.get(), i, j,
+             cpu->generator.get());
     }
   }
 }
 
-void cuda_render(const Camera *camera, const SphereBuffer *spheres,
-                 const Material *materials, FrameBuffer *buffer,
-                 void *generator);
+void gpu_render(GPUState *gpu);

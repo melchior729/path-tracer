@@ -5,6 +5,7 @@
 #include <array>
 
 struct FrameBuffer {
+
   std::array<Color, WIDTH * HEIGHT> pixels{};
 
   constexpr FrameBuffer() {}
