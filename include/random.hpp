@@ -4,6 +4,8 @@
 #include "vec3.hpp"
 #include <random>
 
+// without the ifdef, device compilation will attempt to compile the
+// host specific code on the device, which fails.
 template <typename T> inline HOSTDEV float random_float(T *generator) {
 #ifdef __CUDA_ARCH__
   return rand_float((curandState *)generator);
