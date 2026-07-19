@@ -30,6 +30,25 @@ struct AABB {
     return (n == 1) ? y : (n == 2) ? z : x;
   }
 
+  static bool is_valid_interval(float t0, float t1, Interval &interval) {
+    if (t1 <= t0) {
+      auto t{t0};
+      t0 = t1;
+      t1 = t;
+    }
+
+    if (t0 < t1) {
+      if (t0 > interval.min) {
+        interval.min = t0;
+      }
+      if (t1 < interval.max) {
+        interval.max = t1;
+      }
+    }
+
+    return interval.max > interval.max;
+  }
+
   bool HOSTDEV hit(Ray ray, Interval interval) {
     auto origin{ray.origin()};
     auto dir{ray.direction()};
@@ -41,23 +60,7 @@ struct AABB {
       auto t0{(axis.min - origin[ax]) * inv_dir};
       auto t1{(axis.max - origin[ax]) * inv_dir};
 
-      if (t0 < t1) {
-        if (t0 > interval.min) {
-          interval.min = t0;
-        }
-        if (t1 < interval.max) {
-          interval.max = t1;
-        }
-      } else {
-        if (t1 > interval.min) {
-          interval.min = t1;
-        }
-        if (t0 < interval.max) {
-          interval.max = t0;
-        }
-      }
-
-      if (interval.max <= interval.min) {
+      if (!is_valid_interval(t0, t1, interval)) {
         return false;
       }
     }
