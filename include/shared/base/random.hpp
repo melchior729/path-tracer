@@ -8,7 +8,7 @@
 // host specific code on the device, which fails.
 template <typename T> inline HOSTDEV float random_float(T *generator) {
 #ifdef __CUDA_ARCH__
-  return gpu_rand_float((curandState *)(generator));
+  return gpu_rand_float(reinterpret_cast<curandState *>(generator));
 #else
   auto gen{static_cast<std::mt19937>(*generator)};
   std::uniform_real_distribution<float> distribution(0.0, 1.0);
