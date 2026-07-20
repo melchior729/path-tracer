@@ -1,12 +1,7 @@
 #include "gpu/cuda_commands.hpp"
 #include "gpu/cuda_constants.cuh"
 #include "shared/base/state.hpp"
-#include "shared/geometry/sphere_buffer.hpp"
-#include "shared/render/camera.hpp"
-#include "shared/render/frame_buffer.hpp"
-#include "shared/render/material.hpp"
 #include "shared/render/render.hpp"
-#include <cassert>
 #include <curand_kernel.h>
 
 __global__ void render_kernel(const Camera *camera, const SphereBuffer *spheres,

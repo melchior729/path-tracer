@@ -1,4 +1,3 @@
-#include "gpu/gpu_memory.hpp"
 #define SDL_MAIN_USE_CALLBACKS 1
 #define LOGGING_ENABLED 1
 
@@ -6,23 +5,12 @@
 #include <SDL3/SDL_log.h>
 #endif
 
-#include "SDL3/SDL_init.h"
 #include "SDL3/SDL_main.h"
-#include "SDL3/SDL_render.h"
 #include "SDL3/SDL_timer.h"
+#include "appstate.hpp"
 #include "cpu/cpu_render.hpp"
 #include "gpu/gpu_render.hpp"
-#include "nvtx3/nvtx3.hpp"
-#include "scenes/simple_scene.hpp"
-#include "shared/base/config.hpp"
-#include "shared/base/state.hpp"
-#include "shared/geometry/sphere_buffer.hpp"
-#include "shared/render/frame_buffer.hpp"
-#include <SDL3/SDL_events.h>
-#include <SDL3/SDL_pixels.h>
-#include <SDL3/SDL_video.h>
 #include <cstring>
-#include <memory>
 
 static bool cuda_on{true};
 static bool show_overlay{true};

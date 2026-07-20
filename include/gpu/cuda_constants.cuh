@@ -1,6 +1,7 @@
 #pragma once
 
 #include "shared/base/config.hpp"
+#include <vector_types.h>
 
 static constexpr auto BLOCK_DIM{8};
 static constexpr auto BLOCK_WIDTH{WIDTH / BLOCK_DIM};

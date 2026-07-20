@@ -1,6 +1,5 @@
 #pragma once
 
-#include "shared/base/config.hpp"
 #include "shared/base/state.hpp"
 #include "shared/render/render.hpp"
 

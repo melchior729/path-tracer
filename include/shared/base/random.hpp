@@ -1,6 +1,5 @@
 #pragma once
 
-#include "gpu/gpu_random.cuh" // IWYU pragma: keep
 #include "shared/math/vec3.hpp"
 #include <random>
 

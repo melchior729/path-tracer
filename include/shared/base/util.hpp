@@ -1,11 +1,8 @@
 #pragma once
 
-#include "config.hpp"
 #include "shared/math/interval.hpp"
 #include "shared/math/ray.hpp"
-#include "shared/math/vec3.hpp"
 #include "shared/render/background.hpp"
-#include <cmath>
 
 inline HOSTDEV Vec3 sample_square(float rand_x, float rand_y) {
   return {rand_x - 0.5f, rand_y - 0.5f, 0};

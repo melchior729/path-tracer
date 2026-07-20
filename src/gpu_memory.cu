@@ -1,6 +1,5 @@
 #include "gpu/cuda_commands.hpp"
 #include "gpu/cuda_constants.cuh"
-#include "gpu/gpu_memory.hpp"
 #include "shared/base/state.hpp"
 #include <curand_kernel.h>
 
