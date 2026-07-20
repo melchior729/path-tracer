@@ -2,4 +2,4 @@
 
 #include <curand_kernel.h>
 
-__device__ float rand_float(curandState *generator);
+__device__ float gpu_rand_float(curandState *generator);

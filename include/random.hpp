@@ -8,7 +8,7 @@
 // host specific code on the device, which fails.
 template <typename T> inline HOSTDEV float random_float(T *generator) {
 #ifdef __CUDA_ARCH__
-  return rand_float((curandState *)generator);
+  return gpu_rand_float((curandState *)(generator));
 #else
   auto gen{static_cast<std::mt19937>(*generator)};
   std::uniform_real_distribution<float> distribution(0.0, 1.0);
@@ -30,6 +30,7 @@ template <typename T> inline Vec3 random_vec3(T *generator) {
 template <typename T>
 inline Vec3 random_vec3(float min, float max, T *generator) {
   return {random_float(min, max, generator), random_float(min, max, generator),
+
           random_float(min, max, generator)};
 }
 
