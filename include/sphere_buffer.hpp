@@ -36,4 +36,28 @@ struct SphereBuffer {
       materials[i] = s.mat_idx;
     }
   }
+
+  ~SphereBuffer() {
+    free(center_x);
+    free(center_y);
+    free(center_z);
+    free(radii);
+    free(materials);
+  }
+
+  SphereBuffer(const SphereBuffer &other)
+      : center_x(other.center_x), center_y(other.center_y),
+        center_z(other.center_z), radii(other.radii),
+        materials(other.materials) {}
+
+  SphereBuffer(SphereBuffer &&other)
+      : center_x(other.center_x), center_y(other.center_y),
+        center_z(other.center_z), radii(other.radii),
+        materials(other.materials) {
+    other.center_x = nullptr;
+    other.center_y = nullptr;
+    other.center_z = nullptr;
+    other.radii = nullptr;
+    other.materials = nullptr;
+  }
 };
