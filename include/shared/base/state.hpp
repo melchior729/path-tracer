@@ -1,9 +1,9 @@
 #pragma once
 
-#include "camera.hpp"
-#include "frame_buffer.hpp"
-#include "material.hpp"
-#include "sphere_buffer.hpp"
+#include "shared/geometry/sphere_buffer.hpp"
+#include "shared/render/camera.hpp"
+#include "shared/render/frame_buffer.hpp"
+#include "shared/render/material.hpp"
 #include <memory>
 #include <random>
 
@@ -13,6 +13,7 @@ struct CPUState {
   std::unique_ptr<SphereBuffer> spheres;
   std::unique_ptr<FrameBuffer> buffer;
   std::unique_ptr<std::mt19937> generator;
+  size_t mat_size;
 };
 
 struct GPUState {
@@ -21,4 +22,5 @@ struct GPUState {
   SphereBuffer *spheres;
   FrameBuffer *buffer;
   void *generator; // curandState*
+  size_t mat_size;
 };

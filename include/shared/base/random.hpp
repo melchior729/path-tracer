@@ -1,7 +1,7 @@
 #pragma once
 
-#include "gpu_random.cuh" // IWYU pragma: keep
-#include "vec3.hpp"
+#include "gpu/gpu_random.cuh" // IWYU pragma: keep
+#include "shared/math/vec3.hpp"
 #include <random>
 
 // without the ifdef, device compilation will attempt to compile the
@@ -18,23 +18,23 @@ template <typename T> inline HOSTDEV float random_float(T *generator) {
 }
 
 template <typename T>
-inline float random_float(float min, float max, T *generator) {
+inline HOSTDEV float random_float(float min, float max, T *generator) {
   return min + (max - min) * random_float(generator);
 }
 
-template <typename T> inline Vec3 random_vec3(T *generator) {
+template <typename T> inline HOSTDEV Vec3 random_vec3(T *generator) {
   return {random_float(generator), random_float(generator),
           random_float(generator)};
 }
 
 template <typename T>
-inline Vec3 random_vec3(float min, float max, T *generator) {
+inline Vec3 HOSTDEV random_vec3(float min, float max, T *generator) {
   return {random_float(min, max, generator), random_float(min, max, generator),
 
           random_float(min, max, generator)};
 }
 
-template <typename T> inline Vec3 random_norm(T *generator) {
+template <typename T> inline HOSTDEV Vec3 random_norm(T *generator) {
   static constexpr auto epilson{1e-45f};
   while (true) {
     auto v{random_vec3(-1.0f, 1.0f, generator)};
@@ -46,7 +46,7 @@ template <typename T> inline Vec3 random_norm(T *generator) {
 }
 
 template <typename T>
-inline Vec3 random_on_hemisphere(Vec3 normal, T *generator) {
+inline HOSTDEV Vec3 random_on_hemisphere(Vec3 normal, T *generator) {
   auto v{random_norm(generator)};
   return v.dot(normal) > 0 ? v : -v;
 }

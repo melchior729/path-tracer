@@ -1,7 +1,7 @@
 #pragma once
 
-#include "color.hpp"
-#include "config.hpp"
+#include "shared/base/config.hpp"
+#include "shared/render/color.hpp"
 #include <array>
 
 struct FrameBuffer {

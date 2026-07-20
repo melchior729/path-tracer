@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ray.hpp"
-#include "vec3.hpp"
+#include "shared/math/ray.hpp"
+#include "shared/math/vec3.hpp"
 
 struct HitRecord {
   Point3 p;

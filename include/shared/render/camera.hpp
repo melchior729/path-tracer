@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ray.hpp"
+#include "shared/math/ray.hpp"
 
 static constexpr Vec3 up{0, 1, 0};
 

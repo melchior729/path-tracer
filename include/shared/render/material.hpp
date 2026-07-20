@@ -1,7 +1,7 @@
 #pragma once
 
-#include "background.hpp"
-#include "hit_record.hpp"
+#include "shared/render/background.hpp"
+#include "shared/render/hit_record.hpp"
 
 enum struct MaterialType { Lambertian, Metal, Dielectric };
 

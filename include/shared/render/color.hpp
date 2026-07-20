@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vec3.hpp"
+#include "shared/math/vec3.hpp"
 #include <cstdint>
 
 static constexpr auto BASE{255.0f};
@@ -10,14 +10,10 @@ struct Color {
 
   constexpr HOSTDEV Color() : val(0xFF000000) {}
 
-  constexpr HOSTDEV Color(float r_ch, float g_ch, float b_ch) {
-    // adding 0.5f as float to int conversion will truncate, not round
-    // 127.6 + 0.5 = 128 => rounds to 128, correct.
-    auto r{static_cast<uint32_t>(BASE * r_ch + 0.5f)};
-    auto g{static_cast<uint32_t>(BASE * g_ch + 0.5f)};
-    auto b{static_cast<uint32_t>(BASE * b_ch + 0.5f)};
-    val = 0xFFU << 24 | (r << 16) | (g << 8) | b;
-  }
+  constexpr HOSTDEV Color(float r_ch, float g_ch, float b_ch)
+      : val{(0xFFU << 24) | (static_cast<uint32_t>(BASE * r_ch + 0.5f) << 16) |
+            (static_cast<uint32_t>(BASE * g_ch + 0.5f) << 8) |
+            (static_cast<uint32_t>(BASE * b_ch + 0.5f))} {}
 
   constexpr Color(const Vec3 &v) : Color(v.x(), v.y(), v.z()) {}
 

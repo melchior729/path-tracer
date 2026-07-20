@@ -1,3 +1,4 @@
+#include "gpu/gpu_memory.hpp"
 #define SDL_MAIN_USE_CALLBACKS 1
 #define LOGGING_ENABLED 1
 
@@ -9,14 +10,14 @@
 #include "SDL3/SDL_main.h"
 #include "SDL3/SDL_render.h"
 #include "SDL3/SDL_timer.h"
-#include "config.hpp"
-#include "cuda_render.hpp"
-#include "frame_buffer.hpp"
+#include "cpu/cpu_render.hpp"
+#include "gpu/gpu_render.hpp"
 #include "nvtx3/nvtx3.hpp"
-#include "render.cuh"
-#include "scenes.hpp"
-#include "sphere_buffer.hpp"
-#include "state.hpp"
+#include "scenes/simple_scene.hpp"
+#include "shared/base/config.hpp"
+#include "shared/base/state.hpp"
+#include "shared/geometry/sphere_buffer.hpp"
+#include "shared/render/frame_buffer.hpp"
 #include <SDL3/SDL_events.h>
 #include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_video.h>
@@ -47,15 +48,17 @@ void init_appstate_cpu(AppState &state) {
   state.cpu.camera = std::make_unique<Camera>();
   state.cpu.materials = std::make_unique<std::vector<Material>>();
   auto spheres{simple_scene(*state.cpu.materials.get())};
-  state.cpu.spheres = std::make_unique<SphereBuffer>(spheres);
+  state.cpu.spheres = std::make_unique<SphereBuffer>(std::move(spheres));
   state.cpu.buffer = std::make_unique<FrameBuffer>();
   state.cpu.generator = std::make_unique<std::mt19937>();
+  state.cpu.mat_size = state.cpu.materials->size();
 }
 
-void init_appstate_gpu(AppState &state) {
+void init_appstate_gpu(AppState &state, size_t mat_size) {
   init_gpu_state(&state.gpu, &state.cpu);
   copy_cam_to_gpu(state.gpu.camera, state.cpu.camera.get());
   init_gpu_rng(&state.gpu.generator, SEED);
+  state.gpu.mat_size = mat_size;
 }
 
 SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
@@ -80,7 +83,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
   state->texture.reset(t);
 
   init_appstate_cpu(*state.get());
-  init_appstate_gpu(*state.get());
+  init_appstate_gpu(*state.get(), state->cpu.mat_size);
 
   auto VSYNC_STATUS{false};
   SDL_SetRenderVSync(r, VSYNC_STATUS);

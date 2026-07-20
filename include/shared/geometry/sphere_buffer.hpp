@@ -48,12 +48,12 @@ struct SphereBuffer {
   SphereBuffer(const SphereBuffer &other)
       : center_x(other.center_x), center_y(other.center_y),
         center_z(other.center_z), radii(other.radii),
-        materials(other.materials) {}
+        materials(other.materials), size(other.size) {}
 
   SphereBuffer(SphereBuffer &&other)
       : center_x(other.center_x), center_y(other.center_y),
         center_z(other.center_z), radii(other.radii),
-        materials(other.materials) {
+        materials(other.materials), size(other.size) {
     other.center_x = nullptr;
     other.center_y = nullptr;
     other.center_z = nullptr;

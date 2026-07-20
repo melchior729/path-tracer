@@ -2,14 +2,13 @@
 
 #include "camera.hpp"
 #include "frame_buffer.hpp"
-#include "interval.hpp"
 #include "material.hpp"
-#include "random.hpp"
-#include "ray.hpp"
-#include "sphere_buffer.hpp"
-#include "sphere_hit.hpp"
-#include "state.hpp"
-#include "util.hpp"
+#include "shared/base/random.hpp"
+#include "shared/base/util.hpp"
+#include "shared/geometry/sphere_buffer.hpp"
+#include "shared/geometry/sphere_hit.hpp"
+#include "shared/math/interval.hpp"
+#include "shared/math/ray.hpp"
 #include <cassert>
 
 template <typename T>
@@ -80,15 +79,3 @@ inline HOSTDEV void render(const Camera *camera, const SphereBuffer *spheres,
   auto writtable{gamma_vec(col)};
   buffer->set(i, j, Color{writtable});
 }
-
-inline void cpu_render(CPUState *cpu) {
-  for (size_t j{}; j < HEIGHT; ++j) {
-    for (size_t i{}; i < WIDTH; ++i) {
-      render(cpu->camera.get(), cpu->spheres.get(),
-             cpu->materials.get()->data(), cpu->buffer.get(), i, j,
-             cpu->generator.get());
-    }
-  }
-}
-
-void gpu_render(GPUState *gpu);

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "background.hpp"
 #include "config.hpp"
-#include "interval.hpp"
-#include "ray.hpp"
-#include "vec3.hpp"
+#include "shared/math/interval.hpp"
+#include "shared/math/ray.hpp"
+#include "shared/math/vec3.hpp"
+#include "shared/render/background.hpp"
 #include <cmath>
 
 inline HOSTDEV Vec3 sample_square(float rand_x, float rand_y) {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "config.hpp"
+#include "shared/base/config.hpp"
 #include <algorithm>
 
 struct Interval {
@@ -11,10 +11,8 @@ struct Interval {
 
   constexpr HOSTDEV Interval(float min, float max) : min(min), max(max) {}
 
-  constexpr HOSTDEV Interval(const Interval a, const Interval b) {
-    min = std::min(a.min, b.min);
-    max = std::max(a.max, b.max);
-  }
+  constexpr HOSTDEV Interval(const Interval a, const Interval b)
+      : min(std::min(a.min, b.min)), max(std::max(a.max, b.max)) {}
 
   constexpr HOSTDEV float size() const { return max - min; }
 

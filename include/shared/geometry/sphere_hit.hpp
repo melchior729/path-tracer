@@ -1,8 +1,8 @@
 #pragma once
 
-#include "hit_record.hpp"
-#include "interval.hpp"
-#include "sphere_buffer.hpp"
+#include "shared/geometry/sphere_buffer.hpp"
+#include "shared/math/interval.hpp"
+#include "shared/render/hit_record.hpp"
 
 static HOSTDEV bool hit_sphere(const SphereBuffer *spheres, Ray ray, size_t i,
                                Interval interval, HitRecord *record) {

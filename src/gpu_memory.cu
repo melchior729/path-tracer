@@ -1,38 +1,8 @@
-#include "config.hpp"
-#include "cuda_render.hpp"
-#include "frame_buffer.hpp"
-#include "material.hpp"
-#include "render.cuh"
-#include "sphere_buffer.hpp"
-#include <cassert>
+#include "gpu/cuda_commands.hpp"
+#include "gpu/cuda_constants.cuh"
+#include "gpu/gpu_memory.hpp"
+#include "shared/base/state.hpp"
 #include <curand_kernel.h>
-#include <stdio.h>
-
-static constexpr auto BLOCK_DIM{8};
-static constexpr auto BLOCK_WIDTH{WIDTH / BLOCK_DIM};
-static constexpr auto BLOCK_HEIGHT{HEIGHT / BLOCK_DIM};
-
-static constexpr dim3 THREADS_PER_BLOCK{BLOCK_DIM, BLOCK_DIM};
-static constexpr dim3 NUM_BLOCKS{BLOCK_WIDTH, BLOCK_HEIGHT};
-
-__global__ void render_kernel(const Camera *camera, const SphereBuffer *spheres,
-                              const Material *materials, FrameBuffer *buffer,
-                              curandState *generator) {
-  size_t i{blockDim.x * blockIdx.x + threadIdx.x};
-  size_t j{blockDim.y * blockIdx.y + threadIdx.y};
-  if (i >= WIDTH || j >= HEIGHT) {
-    return;
-  }
-
-  render(camera, spheres, materials, buffer, i, j, generator);
-}
-
-void gpu_render(GPUState *gpu) {
-  render_kernel<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(
-      gpu->camera, gpu->spheres, gpu->materials, gpu->buffer,
-      (curandState *)gpu->generator);
-  CUDA_CHECK(cudaDeviceSynchronize());
-}
 
 static __global__ void init_gpu_sphere_buffer(SphereBuffer *spheres, float *d_x,
                                               float *d_y, float *d_z,
@@ -65,7 +35,7 @@ void init_gpu_state(GPUState *gpu, const CPUState *cpu) {
   copy_to_gpu(&d_z, cpu->spheres->center_z, size);
   copy_to_gpu(&d_r, cpu->spheres->radii, size);
   copy_to_gpu(&d_m, cpu->spheres->materials, size);
-  copy_to_gpu(&gpu->materials, cpu->materials->data(), size);
+  copy_to_gpu(&gpu->materials, cpu->materials->data(), cpu->mat_size);
 
   CUDA_CHECK(cudaMalloc((void **)&gpu->spheres, sizeof(SphereBuffer)));
   CUDA_CHECK(cudaMalloc((void **)&gpu->camera, sizeof(Camera)));
@@ -82,7 +52,7 @@ void copy_cam_to_gpu(Camera *d_c, const Camera *c) {
   CUDA_CHECK(cudaMemcpy(d_c, c, sizeof(Camera), cudaMemcpyHostToDevice));
 }
 
-__global__ void rng_init(curandState *rng, size_t seed) {
+static __global__ void rng_init(curandState *rng, size_t seed) {
   size_t i{blockDim.x * blockIdx.x + threadIdx.x};
   curand_init(seed, i, 0, &rng[i]);
 }
@@ -92,12 +62,4 @@ void init_gpu_rng(void **state, size_t seed) {
                                    BLOCK_HEIGHT * BLOCK_DIM));
   rng_init<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(
       static_cast<curandState *>(*state), seed);
-}
-
-__device__ float gpu_rand_float(curandState *generator) {
-  size_t i{blockDim.x * blockIdx.x + threadIdx.x};
-  auto state{generator[i]};
-  auto rand{curand_uniform(&state)};
-  generator[i] = state;
-  return rand;
 }
