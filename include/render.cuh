@@ -13,6 +13,30 @@
 #include <cassert>
 
 template <typename T>
+static HOSTDEV bool scatters_successfully(const Ray in, const HitRecord &record,
+                                          const Material &material,
+                                          Vec3 &attenuation, T *generator,
+                                          Ray &out) {
+  switch (material.type) {
+  case MaterialType::Lambertian:
+    material.lambertian.scatter(record, random_vec3(generator), attenuation,
+                                out);
+    return true;
+  case MaterialType::Metal:
+    return material.metal.scatter(in, record, random_vec3(generator),
+                                  attenuation, out);
+  case MaterialType::Dielectric:
+    return material.dielectric.scatter(in, record, random_float(generator),
+                                       attenuation, out);
+  default:
+    // this should not happen.
+    assert(false);
+  }
+
+  return false;
+}
+
+template <typename T>
 static HOSTDEV Vec3 ray_color(const Ray ray, const SphereBuffer *spheres,
                               const Material *materials, T *generator,
                               size_t depth) {
@@ -28,27 +52,10 @@ static HOSTDEV Vec3 ray_color(const Ray ray, const SphereBuffer *spheres,
     Ray scattered;
     Vec3 attenuation;
     auto material{materials[record.mat_idx]};
-    auto rand_float{random_float(generator)};
-    Vec3 rand_vec{rand_float, random_float(generator), random_float(generator)};
 
-    switch (material.type) {
-    case MaterialType::Lambertian:
-      material.lambertian.scatter(record, rand_vec, attenuation, scattered);
-      break;
-    case MaterialType::Metal:
-      if (!material.metal.scatter(incoming, record, rand_vec, attenuation,
-                                  scattered)) {
-        return mix_with_sky(incoming, acc_attenuation);
-      }
-      break;
-    case MaterialType::Dielectric:
-      if (!material.dielectric.scatter(incoming, record, rand_float,
-                                       attenuation, scattered)) {
-        return mix_with_sky(incoming, acc_attenuation);
-      }
-      break;
-    default:
-      assert(false);
+    if (!scatters_successfully(incoming, record, material, attenuation,
+                               generator, scattered)) {
+      return mix_with_sky(incoming, acc_attenuation);
     }
 
     incoming = scattered;
