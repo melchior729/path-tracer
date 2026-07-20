@@ -9,7 +9,7 @@ struct Lambertian {
   Vec3 albedo;
 
   constexpr HOSTDEV void scatter(const HitRecord &record, Vec3 rand_norm,
-                                 Vec3 &attenuation, Ray &out) {
+                                 Vec3 &attenuation, Ray &out) const {
     auto dir{record.normal + rand_norm};
     if (dir.near_zero()) {
       dir = record.normal;
@@ -25,7 +25,7 @@ struct Metal {
   float fuzz;
 
   bool HOSTDEV scatter(const Ray in, const HitRecord &record, Vec3 rand_norm,
-                       Vec3 &attenuation, Ray &out) {
+                       Vec3 &attenuation, Ray &out) const {
     auto dir{reflect(in.direction(), record.normal)};
     dir = norm(dir) + fuzz * rand_norm;
     out = {record.p, dir};
@@ -42,7 +42,7 @@ struct Dielectric {
   float refraction_idx;
 
   bool HOSTDEV scatter(const Ray in, const HitRecord record, float rand_float,
-                       Vec3 &attenuation, Ray &out) {
+                       Vec3 &attenuation, Ray &out) const {
     attenuation = WHITE;
     auto ratio{record.front_facing ? 1.0 / refraction_idx : refraction_idx};
     auto dir{norm(in.direction())};
