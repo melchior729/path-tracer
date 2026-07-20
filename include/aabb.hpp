@@ -46,7 +46,7 @@ struct AABB {
       }
     }
 
-    return interval.max > interval.max;
+    return interval.max > interval.min;
   }
 
   bool HOSTDEV hit(Ray ray, Interval interval) {
