@@ -2,6 +2,7 @@
 
 #include "interval.hpp"
 #include "ray.hpp"
+#include "shared/geometry/sphere_buffer.hpp"
 
 struct AABB {
   Interval x, y, z;
@@ -25,6 +26,12 @@ struct AABB {
     y = Interval{a.y, b.y};
     z = Interval{a.z, b.z};
   }
+
+  constexpr HOSTDEV AABB(const Sphere &sphere)
+      : AABB{Point3{sphere.x - sphere.r, sphere.y - sphere.r,
+                    sphere.z - sphere.r},
+             Point3{sphere.x + sphere.r, sphere.y + sphere.r,
+                    sphere.z + sphere.r}} {}
 
   constexpr HOSTDEV Interval interval_axis(size_t n) {
     return (n == 1) ? y : (n == 2) ? z : x;
