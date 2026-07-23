@@ -44,6 +44,8 @@ static HOSTDEV Vec3 ray_color(const Ray ray, const SphereBuffer *spheres,
 
   for (size_t i{}; i < depth; ++i) {
     HitRecord record;
+
+    // should be BVHNode tree.hit(), not spherebuffer.
     if (!hit_spheres(spheres, incoming, Interval{0.001, INF}, &record)) {
       return mix_with_sky(incoming, acc_attenuation);
     }
