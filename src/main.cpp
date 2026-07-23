@@ -38,7 +38,7 @@ SDL_AppResult SDL_AppInit(void **appstate, [[maybe_unused]] int argc,
   state->texture.reset(t);
 
   init_appstate_cpu(*state.get());
-  init_appstate_gpu(*state.get(), state->cpu.mat_size);
+  init_appstate_gpu(*state.get());
 
   auto VSYNC_STATUS{false};
   SDL_SetRenderVSync(r, VSYNC_STATUS);
@@ -84,6 +84,31 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
       break;
     case SDLK_I:
       show_overlay = !show_overlay;
+      break;
+    case SDLK_1:
+      if (!event->key.repeat) {
+        set_scene(*state, three_spheres);
+      }
+      break;
+    case SDLK_2:
+      if (!event->key.repeat) {
+        set_scene(*state, bvh_stress_scene);
+      }
+      break;
+    case SDLK_3:
+      if (!event->key.repeat) {
+        set_scene(*state, orbital_showcase_scene);
+      }
+      break;
+    case SDLK_4:
+      if (!event->key.repeat) {
+        set_scene(*state, simple_scene);
+      }
+      break;
+    case SDLK_5:
+      if (!event->key.repeat) {
+        set_scene(*state, complex_scene);
+      }
       break;
     }
 
@@ -146,6 +171,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 void SDL_AppQuit(void *appstate, [[maybe_unused]] SDL_AppResult result) {
   if (appstate != nullptr) {
     std::unique_ptr<AppState> state{static_cast<AppState *>(appstate)};
+    destroy_gpu_state(&state->gpu);
   }
 
   SDL_Quit();

@@ -19,11 +19,17 @@ struct CPUState {
 };
 
 struct GPUState {
-  Camera *camera;
-  Material *materials;
-  SphereBuffer *spheres;
-  FrameBuffer *buffer;
-  void *generator; // curandState*
-  BVHTree *tree;
-  size_t mat_size;
+  Camera *camera{};
+  Material *materials{};
+  SphereBuffer *spheres{};
+  FrameBuffer *buffer{};
+  void *generator{}; // curandState*
+  BVHTree *tree{};
+  float *sphere_x{};
+  float *sphere_y{};
+  float *sphere_z{};
+  float *sphere_radii{};
+  size_t *sphere_materials{};
+  BVHNode *bvh_nodes{};
+  size_t mat_size{};
 };

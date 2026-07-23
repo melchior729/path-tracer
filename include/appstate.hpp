@@ -1,8 +1,11 @@
 #pragma once
 
 #include "gpu/gpu_memory.hpp"
-#include "scenes/complex_scene.hpp" // IWYU pragma: keep
+#include "scenes/bvh_stress_scene.hpp"
+#include "scenes/complex_scene.hpp"
+#include "scenes/orbital_showcase_scene.hpp"
 #include "scenes/simple_scene.hpp"
+#include "scenes/three_spheres.hpp"
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
 
@@ -22,20 +25,34 @@ struct AppState {
   GPUState gpu;
 };
 
-inline void init_appstate_cpu(AppState &state) {
-  state.cpu.camera = std::make_unique<Camera>();
-  state.cpu.materials = std::make_unique<std::vector<Material>>();
-  auto spheres{simple_scene(*state.cpu.materials.get())};
-  state.cpu.tree = std::make_unique<BVHTree>(spheres);
-  state.cpu.spheres = std::make_unique<SphereBuffer>(std::move(spheres));
-  state.cpu.buffer = std::make_unique<FrameBuffer>();
-  state.cpu.generator = std::make_unique<std::mt19937>();
-  state.cpu.mat_size = state.cpu.materials->size();
+using SceneFactory = std::vector<Sphere> (*)(std::vector<Material> &);
+
+inline void load_scene_cpu(CPUState &cpu, SceneFactory scene) {
+  auto materials{std::make_unique<std::vector<Material>>()};
+  auto spheres{scene(*materials)};
+  auto tree{std::make_unique<BVHTree>(spheres)};
+  auto sphere_buffer{std::make_unique<SphereBuffer>(std::move(spheres))};
+
+  cpu.mat_size = materials->size();
+  cpu.materials = std::move(materials);
+  cpu.tree = std::move(tree);
+  cpu.spheres = std::move(sphere_buffer);
 }
 
-inline void init_appstate_gpu(AppState &state, size_t mat_size) {
+inline void set_scene(AppState &state, SceneFactory scene) {
+  load_scene_cpu(state.cpu, scene);
+  upload_scene_to_gpu(&state.gpu, &state.cpu);
+}
+
+inline void init_appstate_cpu(AppState &state) {
+  state.cpu.camera = std::make_unique<Camera>();
+  state.cpu.buffer = std::make_unique<FrameBuffer>();
+  state.cpu.generator = std::make_unique<std::mt19937>();
+  load_scene_cpu(state.cpu, three_spheres);
+}
+
+inline void init_appstate_gpu(AppState &state) {
   init_gpu_state(&state.gpu, &state.cpu);
   copy_cam_to_gpu(state.gpu.camera, state.cpu.camera.get());
   init_gpu_rng(&state.gpu.generator, SEED);
-  state.gpu.mat_size = mat_size;
 }
