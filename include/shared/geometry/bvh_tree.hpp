@@ -59,14 +59,16 @@ struct BVHTree {
     const Vec3 inverse_direction{1.0f / direction.x(), 1.0f / direction.y(),
                                  1.0f / direction.z()};
 
-    BVHNode *stack[8];
+    // A balanced 25,000-leaf tree needs at most 16 pending node indices.
+    // Indices keep this the same size as the previous eight-pointer stack.
+    int stack[16];
     size_t sp{};
 
     bool hit{};
-    stack[sp++] = root;
+    stack[sp++] = 0;
 
     while (sp > 0) {
-      auto node{stack[--sp]};
+      auto node{root + stack[--sp]};
       if (!node->bbox.hit(origin, inverse_direction, interval)) {
         continue;
       }
@@ -80,8 +82,8 @@ struct BVHTree {
         continue;
       }
 
-      stack[sp++] = root + node->left_i;
-      stack[sp++] = root + node->right_i;
+      stack[sp++] = node->left_i;
+      stack[sp++] = node->right_i;
     }
 
     return hit;
