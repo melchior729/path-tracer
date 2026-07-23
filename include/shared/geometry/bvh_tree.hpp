@@ -4,24 +4,21 @@
 #include "shared/geometry/sphere_hit.hpp"
 #include "shared/math/aabb.hpp"
 #include "shared/math/interval.hpp"
-#include <random>
+#include <algorithm>
 
 struct BVHNode {
   AABB bbox;
   int left_i{-1};
   int right_i{-1};
-  int sphere_i{-1};
+  union {
+    int sphere_i{-1};
+    int split_axis;
+  };
 
-  bool HOSTDEV is_leaf() {
-    return left_i == -1 && right_i == -1 && sphere_i != -1;
+  bool HOSTDEV is_leaf() const {
+    return left_i == -1 && right_i == -1;
   }
 };
-
-static int random_int(int min, int max) {
-  static std::mt19937 gen{SEED};
-  std::uniform_int_distribution<int> distribution(min, max);
-  return distribution(gen);
-}
 
 struct BVHTree {
   BVHNode *root;
@@ -82,8 +79,17 @@ struct BVHTree {
         continue;
       }
 
-      stack[sp++] = node->left_i;
-      stack[sp++] = node->right_i;
+      auto near_i{node->left_i};
+      auto far_i{node->right_i};
+      if (direction[static_cast<size_t>(node->split_axis)] < 0.0f) {
+        auto temp{near_i};
+        near_i = far_i;
+        far_i = temp;
+      }
+
+      // The stack is LIFO, so push the farther child first.
+      stack[sp++] = far_i;
+      stack[sp++] = near_i;
     }
 
     return hit;
@@ -102,29 +108,45 @@ private:
     leaf->sphere_i = i;
   }
 
-  void set_internal(BVHNode *node, BVHNode *left, BVHNode *right) {
+  void set_internal(BVHNode *node, BVHNode *left, BVHNode *right,
+                    size_t split_axis) {
     node->left_i = left - root;
     node->right_i = right - root;
     node->bbox = AABB{left->bbox, right->bbox};
-    node->sphere_i = -1;
+    node->split_axis = static_cast<int>(split_axis);
   }
 
-  static bool box_compare(const Sphere &a, const Sphere &b, size_t axis_n) {
-    auto a_axis_interval{AABB{a}.interval_axis(axis_n)};
-    auto b_axis_interval{AABB{b}.interval_axis(axis_n)};
-    return a_axis_interval.min < b_axis_interval.min;
+  static float centroid_axis(const Sphere &sphere, size_t axis) {
+    return axis == 0 ? sphere.x : axis == 1 ? sphere.y : sphere.z;
   }
 
-  static bool box_x_compare(const Sphere &a, const Sphere &b) {
-    return box_compare(a, b, 0);
-  }
+  static size_t widest_centroid_axis(const std::vector<Sphere> &spheres,
+                                     size_t start, size_t end) {
+    auto min_x{spheres[start].x};
+    auto max_x{min_x};
+    auto min_y{spheres[start].y};
+    auto max_y{min_y};
+    auto min_z{spheres[start].z};
+    auto max_z{min_z};
 
-  static bool box_y_compare(const Sphere &a, const Sphere &b) {
-    return box_compare(a, b, 1);
-  }
+    for (auto i{start + 1}; i < end; ++i) {
+      const auto &sphere{spheres[i]};
+      min_x = std::min(min_x, sphere.x);
+      max_x = std::max(max_x, sphere.x);
+      min_y = std::min(min_y, sphere.y);
+      max_y = std::max(max_y, sphere.y);
+      min_z = std::min(min_z, sphere.z);
+      max_z = std::max(max_z, sphere.z);
+    }
 
-  static bool box_z_compare(const Sphere &a, const Sphere &b) {
-    return box_compare(a, b, 2);
+    const auto x_extent{max_x - min_x};
+    const auto y_extent{max_y - min_y};
+    const auto z_extent{max_z - min_z};
+
+    if (x_extent >= y_extent && x_extent >= z_extent) {
+      return size_t{0};
+    }
+    return y_extent >= z_extent ? size_t{1} : size_t{2};
   }
 
   int fill_tree(std::vector<Sphere> &spheres, size_t start, size_t end) {
@@ -137,18 +159,20 @@ private:
       return i;
     }
 
-    auto axis{random_int(0, 2)};
-    auto comp{axis == 0   ? box_x_compare
-              : axis == 1 ? box_y_compare
-                          : box_z_compare};
-    std::sort(spheres.begin() + static_cast<ptrdiff_t>(start),
-              spheres.begin() + static_cast<ptrdiff_t>(end), comp);
-
     auto mid{start + span / 2};
+    auto axis{widest_centroid_axis(spheres, start, end)};
+    std::nth_element(
+        spheres.begin() + static_cast<ptrdiff_t>(start),
+        spheres.begin() + static_cast<ptrdiff_t>(mid),
+        spheres.begin() + static_cast<ptrdiff_t>(end),
+        [axis](const Sphere &a, const Sphere &b) {
+          return centroid_axis(a, axis) < centroid_axis(b, axis);
+        });
+
     auto left{fill_tree(spheres, start, mid)};
     auto right{fill_tree(spheres, mid, end)};
 
-    set_internal(node, root + left, root + right);
+    set_internal(node, root + left, root + right, axis);
 
     return i;
   }
