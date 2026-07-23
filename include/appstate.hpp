@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gpu/gpu_memory.hpp"
-#include "scenes/simple_scene.hpp"
+#include "scenes/complex_scene.hpp"
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
 
@@ -24,7 +24,7 @@ struct AppState {
 inline void init_appstate_cpu(AppState &state) {
   state.cpu.camera = std::make_unique<Camera>();
   state.cpu.materials = std::make_unique<std::vector<Material>>();
-  auto spheres{simple_scene(*state.cpu.materials.get())};
+  auto spheres{complex_scene(*state.cpu.materials.get())};
   state.cpu.spheres = std::make_unique<SphereBuffer>(std::move(spheres));
   state.cpu.buffer = std::make_unique<FrameBuffer>();
   state.cpu.generator = std::make_unique<std::mt19937>();
