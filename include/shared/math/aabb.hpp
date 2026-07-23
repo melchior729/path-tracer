@@ -1,7 +1,7 @@
 #pragma once
 
 #include "interval.hpp"
-#include "ray.hpp"
+#include "ray.hpp" // IWYU pragma: keep
 #include "shared/geometry/sphere_buffer.hpp"
 
 struct AABB {

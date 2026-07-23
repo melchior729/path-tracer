@@ -1,9 +1,4 @@
 #define SDL_MAIN_USE_CALLBACKS 1
-#define LOGGING_ENABLED 1
-
-#if LOGGING_ENABLED
-#include <SDL3/SDL_log.h>
-#endif
 
 #include "SDL3/SDL_main.h"
 #include "SDL3/SDL_timer.h"
@@ -148,9 +143,6 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
   int pitch{};
 
   if (SDL_LockTexture(state->texture.get(), NULL, &pixels, &pitch)) {
-    // want to write to the address of where its coming from
-    // this is cpu's buffer @ pixels.
-
     std::memcpy(pixels, &(state->cpu.buffer->pixels),
                 static_cast<size_t>(pitch) * HEIGHT);
     SDL_UnlockTexture(state->texture.get());

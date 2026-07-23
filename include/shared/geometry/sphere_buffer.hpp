@@ -3,8 +3,6 @@
 #include <cstdlib>
 #include <vector>
 
-// TODO: add bvh update here, with AABB *bboxs;
-// double check where the spheres are created to see what to do
 struct Sphere {
   float x;
   float y;

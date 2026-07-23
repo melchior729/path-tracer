@@ -1,8 +1,8 @@
 #pragma once
 
 #include "gpu/gpu_memory.hpp"
-#include "scenes/bvh_stress_scene.hpp"
-#include "scenes/massive_sphere_scenes.hpp"
+#include "scenes/bvh_stress_scene.hpp"      // IWYU pragma: keep
+#include "scenes/massive_sphere_scenes.hpp" // IWYU pragma: keep
 #include "scenes/three_spheres.hpp"
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
@@ -17,8 +17,6 @@ struct AppState {
   std::unique_ptr<SDL_Window, SDL_Deleter> window;
   std::unique_ptr<SDL_Renderer, SDL_Deleter> renderer;
   std::unique_ptr<SDL_Texture, SDL_Deleter> texture;
-  // might want to have these as pointers when
-  // number of spheres increase
   CPUState cpu;
   GPUState gpu;
 };

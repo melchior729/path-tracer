@@ -15,9 +15,7 @@ struct BVHNode {
     int split_axis;
   };
 
-  bool HOSTDEV is_leaf() const {
-    return left_i == -1 && right_i == -1;
-  }
+  bool HOSTDEV is_leaf() const { return left_i == -1 && right_i == -1; }
 };
 
 struct BVHTree {
@@ -161,13 +159,12 @@ private:
 
     auto mid{start + span / 2};
     auto axis{widest_centroid_axis(spheres, start, end)};
-    std::nth_element(
-        spheres.begin() + static_cast<ptrdiff_t>(start),
-        spheres.begin() + static_cast<ptrdiff_t>(mid),
-        spheres.begin() + static_cast<ptrdiff_t>(end),
-        [axis](const Sphere &a, const Sphere &b) {
-          return centroid_axis(a, axis) < centroid_axis(b, axis);
-        });
+    std::nth_element(spheres.begin() + static_cast<ptrdiff_t>(start),
+                     spheres.begin() + static_cast<ptrdiff_t>(mid),
+                     spheres.begin() + static_cast<ptrdiff_t>(end),
+                     [axis](const Sphere &a, const Sphere &b) {
+                       return centroid_axis(a, axis) < centroid_axis(b, axis);
+                     });
 
     auto left{fill_tree(spheres, start, mid)};
     auto right{fill_tree(spheres, mid, end)};
