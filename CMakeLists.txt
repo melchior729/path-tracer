@@ -16,10 +16,12 @@ add_executable(main)
 target_sources(main PRIVATE ${SRCS})
 target_include_directories(main PUBLIC include)
 
-set(CXX_FLAGS -Wall -Wextra -Werror -Wsign-conversion -pedantic-errors -g)
+set(CXX_FLAGS -Wall -Wextra -Werror -Wsign-conversion -pedantic-errors -g -O3)
 set(CUDA_FLAGS
   -Xcompiler=-Wall,-Wextra,-Wsign-conversion
   -Xcudafe=--display_error_number
+  -Xptxas=-O3
+  -use_fast_math
   --Werror=all-warnings
   -lineinfo
   --expt-relaxed-constexpr
