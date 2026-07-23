@@ -15,6 +15,12 @@ static __global__ void init_gpu_sphere_buffer(SphereBuffer *spheres, float *d_x,
   spheres->size = size;
 }
 
+static __global__ void init_bvh_tree(BVHTree *tree, BVHNode *root,
+                                     size_t size) {
+  tree->root = root;
+  tree->size = size;
+}
+
 template <typename T> static void copy_to_gpu(T **dest, T *src, size_t N) {
   auto T_bytes_per_arr{N * sizeof(T)};
   CUDA_CHECK(cudaMalloc((void **)dest, T_bytes_per_arr));
@@ -22,11 +28,14 @@ template <typename T> static void copy_to_gpu(T **dest, T *src, size_t N) {
 }
 
 void init_gpu_state(GPUState *gpu, const CPUState *cpu) {
+  // CUDA_CHECK(cudaDeviceSetLimit(cudaLimitStackSize, 4096););
+
   float *d_x;
   float *d_y;
   float *d_z;
   float *d_r;
   size_t *d_m;
+  BVHNode *d_root;
 
   auto size{cpu->spheres->size};
   copy_to_gpu(&d_x, cpu->spheres->center_x, size);
@@ -35,12 +44,15 @@ void init_gpu_state(GPUState *gpu, const CPUState *cpu) {
   copy_to_gpu(&d_r, cpu->spheres->radii, size);
   copy_to_gpu(&d_m, cpu->spheres->materials, size);
   copy_to_gpu(&gpu->materials, cpu->materials->data(), cpu->mat_size);
+  copy_to_gpu(&d_root, cpu->tree->root, 2 * size - 1);
 
   CUDA_CHECK(cudaMalloc((void **)&gpu->spheres, sizeof(SphereBuffer)));
   CUDA_CHECK(cudaMalloc((void **)&gpu->camera, sizeof(Camera)));
   CUDA_CHECK(cudaMalloc((void **)&gpu->buffer, sizeof(FrameBuffer)));
+  CUDA_CHECK(cudaMalloc((void **)&gpu->tree, sizeof(BVHTree)));
 
   init_gpu_sphere_buffer<<<1, 1>>>(gpu->spheres, d_x, d_y, d_z, d_r, d_m, size);
+  init_bvh_tree<<<1, 1>>>(gpu->tree, d_root, 2 * size - 1);
 }
 
 void move_fb_to_cpu(FrameBuffer *b, const FrameBuffer *d_b) {
@@ -52,13 +64,14 @@ void copy_cam_to_gpu(Camera *d_c, const Camera *c) {
 }
 
 static __global__ void rng_init(curandState *rng, size_t seed) {
-  size_t i{blockDim.x * blockIdx.x + threadIdx.x};
-  curand_init(seed, i, 0, &rng[i]);
+  size_t x{blockDim.x * blockIdx.x + threadIdx.x};
+  size_t y{blockDim.y * blockIdx.y + threadIdx.y};
+  size_t i{y * WIDTH + x};
+  curand_init(seed + i, 0, 0, &rng[i]);
 }
 
 void init_gpu_rng(void **state, size_t seed) {
-  CUDA_CHECK(cudaMalloc(state, sizeof(curandState) * BLOCK_WIDTH *
-                                   BLOCK_HEIGHT * BLOCK_DIM));
+  CUDA_CHECK(cudaMalloc(state, sizeof(curandState) * WIDTH * HEIGHT));
   rng_init<<<NUM_BLOCKS, THREADS_PER_BLOCK>>>(
       static_cast<curandState *>(*state), seed);
 }

@@ -1,13 +1,20 @@
+#pragma once
+
 #include "shared/geometry/sphere_buffer.hpp"
+#include "shared/geometry/sphere_hit.hpp"
 #include "shared/math/aabb.hpp"
 #include "shared/math/interval.hpp"
 #include <random>
 
 struct BVHNode {
   AABB bbox;
-  int left_i;
-  int right_i;
-  int sphere_i;
+  int left_i{-1};
+  int right_i{-1};
+  int sphere_i{-1};
+
+  bool HOSTDEV is_leaf() {
+    return left_i == -1 && right_i == -1 && sphere_i != -1;
+  }
 };
 
 static int random_int(int min, int max) {
@@ -17,8 +24,10 @@ static int random_int(int min, int max) {
 }
 
 struct BVHTree {
+  BVHNode *root;
+  size_t size;
 
-  BVHTree(std::vector<Sphere> spheres) {
+  BVHTree(std::vector<Sphere> &spheres) {
     size = spheres.size();
     root = static_cast<BVHNode *>(malloc((2 * size - 1) * sizeof(BVHNode)));
     fill_tree(spheres, 0, size);
@@ -39,16 +48,46 @@ struct BVHTree {
     return *this;
   }
 
+  bool HOSTDEV hit(const Ray &ray, Interval interval, HitRecord *record,
+                   const SphereBuffer *spheres) const {
+    BVHNode *stack[32];
+    size_t sp{};
+
+    bool hit{};
+    stack[sp++] = root;
+
+    while (sp > 0) {
+      auto node{stack[--sp]};
+      if (!node->bbox.hit(ray, interval)) {
+        continue;
+      }
+
+      if (node->is_leaf()) {
+        if (hit_sphere(spheres, ray, static_cast<size_t>(node->sphere_i),
+                       interval, record)) {
+          hit = true;
+          interval.max = record->t;
+        }
+        continue;
+      }
+
+      stack[sp++] = root + node->left_i;
+      stack[sp++] = root + node->right_i;
+    }
+
+    return hit;
+  }
+
   ~BVHTree() { free(root); }
 
 private:
-  BVHNode *root;
   size_t open{};
-  size_t size;
 
   constexpr void set_leaf(BVHNode *leaf, const std::vector<Sphere> &spheres,
                           size_t i) {
     leaf->bbox = AABB{spheres[i]};
+    leaf->left_i = -1;
+    leaf->right_i = -1;
     leaf->sphere_i = i;
   }
 

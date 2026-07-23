@@ -3,7 +3,7 @@
 #include "shared/geometry/sphere_buffer.hpp"
 #include "shared/render/material.hpp"
 
-inline SphereBuffer simple_scene(std::vector<Material> &materials) {
+inline std::vector<Sphere> simple_scene(std::vector<Material> &materials) {
   Lambertian red{Vec3{0.8f, 0.1f, 0.1f}};
   Lambertian dark{Vec3{0.15f, 0.15f, 0.15f}};
   Metal mirror{Vec3{0.9f, 0.9f, 0.9f}, 0.0f};
@@ -29,5 +29,5 @@ inline SphereBuffer simple_scene(std::vector<Material> &materials) {
   spheres.push_back({0.0f, 2.5f, -2.0f, 0.5f, 4});      // glass, foreground
   spheres.push_back({0.0f, -101.0f, -3.0f, 100.0f, 1}); // dark, ground sphere
 
-  return SphereBuffer{spheres};
+  return spheres;
 }

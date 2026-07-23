@@ -5,8 +5,8 @@
 #include "material.hpp"
 #include "shared/base/random.hpp"
 #include "shared/base/util.hpp"
+#include "shared/geometry/bvh_tree.hpp"
 #include "shared/geometry/sphere_buffer.hpp"
-#include "shared/geometry/sphere_hit.hpp"
 #include "shared/math/interval.hpp"
 #include "shared/math/ray.hpp"
 #include <cassert>
@@ -37,16 +37,15 @@ static HOSTDEV bool scatters_successfully(const Ray in, const HitRecord &record,
 
 template <typename T>
 static HOSTDEV Vec3 ray_color(const Ray ray, const SphereBuffer *spheres,
-                              const Material *materials, T *generator,
-                              size_t depth) {
+                              const Material *materials, const BVHTree *tree,
+                              T *generator, size_t depth) {
   Ray incoming{ray};
   Vec3 acc_attenuation{WHITE};
 
   for (size_t i{}; i < depth; ++i) {
     HitRecord record;
 
-    // should be BVHNode tree.hit(), not spherebuffer.
-    if (!hit_spheres(spheres, incoming, Interval{0.001, INF}, &record)) {
+    if (!tree->hit(incoming, Interval{0.001f, INF}, &record, spheres)) {
       return mix_with_sky(incoming, acc_attenuation);
     }
 
@@ -69,12 +68,13 @@ static HOSTDEV Vec3 ray_color(const Ray ray, const SphereBuffer *spheres,
 template <typename T>
 inline HOSTDEV void render(const Camera *camera, const SphereBuffer *spheres,
                            const Material *materials, FrameBuffer *buffer,
-                           size_t i, size_t j, T *generator) {
+                           size_t i, size_t j, const BVHTree *tree,
+                           T *generator) {
   Vec3 col;
   for (size_t s{}; s < SAMPLE_COUNT; ++s) {
     auto ray{camera->ray_at_pixel(
         sample_square(random_float(generator), random_float(generator)), i, j)};
-    col += ray_color(ray, spheres, materials, generator, MAX_DEPTH);
+    col += ray_color(ray, spheres, materials, tree, generator, MAX_DEPTH);
   }
 
   col /= SAMPLE_COUNT;

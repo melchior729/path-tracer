@@ -3,7 +3,7 @@
 #include "shared/geometry/sphere_buffer.hpp"
 #include "shared/render/material.hpp"
 
-inline SphereBuffer complex_scene(std::vector<Material> &materials) {
+inline std::vector<Sphere> complex_scene(std::vector<Material> &materials) {
   // Original 5
   Lambertian red{Vec3{0.8f, 0.1f, 0.1f}};
   Lambertian dark{Vec3{0.15f, 0.15f, 0.15f}};
@@ -85,5 +85,5 @@ inline SphereBuffer complex_scene(std::vector<Material> &materials) {
   spheres.push_back({-0.5f, 2.0f, -3.2f, 0.15f, 8});
   spheres.push_back({0.0f, 3.5f, -4.0f, 0.2f, 5});
 
-  return SphereBuffer{spheres};
+  return spheres;
 }

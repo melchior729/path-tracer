@@ -4,7 +4,7 @@
 #include "shared/math/interval.hpp"
 #include "shared/render/hit_record.hpp"
 
-static HOSTDEV bool hit_sphere(const SphereBuffer *spheres, Ray ray, size_t i,
+inline HOSTDEV bool hit_sphere(const SphereBuffer *spheres, Ray ray, size_t i,
                                Interval interval, HitRecord *record) {
   auto x{spheres->center_x[i]};
   auto y{spheres->center_y[i]};

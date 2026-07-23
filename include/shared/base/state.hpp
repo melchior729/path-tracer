@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shared/geometry/bvh_tree.hpp"
 #include "shared/geometry/sphere_buffer.hpp"
 #include "shared/render/camera.hpp"
 #include "shared/render/frame_buffer.hpp"
@@ -13,6 +14,7 @@ struct CPUState {
   std::unique_ptr<SphereBuffer> spheres;
   std::unique_ptr<FrameBuffer> buffer;
   std::unique_ptr<std::mt19937> generator;
+  std::unique_ptr<BVHTree> tree;
   size_t mat_size;
 };
 
@@ -22,5 +24,6 @@ struct GPUState {
   SphereBuffer *spheres;
   FrameBuffer *buffer;
   void *generator; // curandState*
+  BVHTree *tree;
   size_t mat_size;
 };

@@ -37,7 +37,8 @@ struct AABB {
     return (n == 1) ? y : (n == 2) ? z : x;
   }
 
-  static bool is_valid_interval(float t0, float t1, Interval &interval) {
+  static HOSTDEV bool is_valid_interval(float t0, float t1,
+                                        Interval &interval) {
     if (t1 <= t0) {
       auto t{t0};
       t0 = t1;
