@@ -25,7 +25,7 @@ struct AppState {
 inline void init_appstate_cpu(AppState &state) {
   state.cpu.camera = std::make_unique<Camera>();
   state.cpu.materials = std::make_unique<std::vector<Material>>();
-  auto spheres{complex_scene(*state.cpu.materials.get())};
+  auto spheres{simple_scene(*state.cpu.materials.get())};
   state.cpu.tree = std::make_unique<BVHTree>(spheres);
   state.cpu.spheres = std::make_unique<SphereBuffer>(std::move(spheres));
   state.cpu.buffer = std::make_unique<FrameBuffer>();
