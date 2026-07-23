@@ -50,7 +50,7 @@ struct BVHTree {
 
   bool HOSTDEV hit(const Ray &ray, Interval interval, HitRecord *record,
                    const SphereBuffer *spheres) const {
-    BVHNode *stack[32];
+    BVHNode *stack[8];
     size_t sp{};
 
     bool hit{};
