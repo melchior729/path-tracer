@@ -2,9 +2,7 @@
 
 #include "gpu/gpu_memory.hpp"
 #include "scenes/bvh_stress_scene.hpp"
-#include "scenes/complex_scene.hpp"
-#include "scenes/orbital_showcase_scene.hpp"
-#include "scenes/simple_scene.hpp"
+#include "scenes/massive_sphere_scenes.hpp"
 #include "scenes/three_spheres.hpp"
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>

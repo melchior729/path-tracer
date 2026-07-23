@@ -3,8 +3,8 @@
 #include "shared/geometry/sphere_buffer.hpp"
 #include "shared/render/material.hpp"
 
-// 120 spheres: large enough to exercise BVH traversal while remaining within
-// the current balanced tree's eight-entry traversal stack.
+// 120 spheres: large enough to show the BVH crossover without making scene
+// construction or linear comparison prohibitively expensive.
 inline std::vector<Sphere>
 bvh_stress_scene(std::vector<Material> &materials) {
   materials.push_back(

@@ -97,17 +97,12 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
       break;
     case SDLK_3:
       if (!event->key.repeat) {
-        set_scene(*state, orbital_showcase_scene);
+        set_scene(*state, five_thousand_spheres);
       }
       break;
     case SDLK_4:
       if (!event->key.repeat) {
-        set_scene(*state, simple_scene);
-      }
-      break;
-    case SDLK_5:
-      if (!event->key.repeat) {
-        set_scene(*state, complex_scene);
+        set_scene(*state, twenty_five_thousand_spheres);
       }
       break;
     }
