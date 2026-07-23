@@ -57,16 +57,13 @@ struct AABB {
     return interval.max > interval.min;
   }
 
-  bool HOSTDEV hit(Ray ray, Interval interval) {
-    auto origin{ray.origin()};
-    auto dir{ray.direction()};
-
+  bool HOSTDEV hit(const Point3 &origin, const Vec3 &inverse_direction,
+                   Interval interval) {
     for (size_t ax{}; ax < 3; ++ax) {
       auto axis{interval_axis(ax)};
-      auto inv_dir{1.0f / dir[ax]};
 
-      auto t0{(axis.min - origin[ax]) * inv_dir};
-      auto t1{(axis.max - origin[ax]) * inv_dir};
+      auto t0{(axis.min - origin[ax]) * inverse_direction[ax]};
+      auto t1{(axis.max - origin[ax]) * inverse_direction[ax]};
 
       if (!is_valid_interval(t0, t1, interval)) {
         return false;

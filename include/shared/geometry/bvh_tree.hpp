@@ -50,6 +50,15 @@ struct BVHTree {
 
   bool HOSTDEV hit(const Ray &ray, Interval interval, HitRecord *record,
                    const SphereBuffer *spheres) const {
+    if (spheres->size <= 16) {
+      return hit_spheres(spheres, ray, interval, record);
+    }
+
+    const auto origin{ray.origin()};
+    const auto direction{ray.direction()};
+    const Vec3 inverse_direction{1.0f / direction.x(), 1.0f / direction.y(),
+                                 1.0f / direction.z()};
+
     BVHNode *stack[8];
     size_t sp{};
 
@@ -58,7 +67,7 @@ struct BVHTree {
 
     while (sp > 0) {
       auto node{stack[--sp]};
-      if (!node->bbox.hit(ray, interval)) {
+      if (!node->bbox.hit(origin, inverse_direction, interval)) {
         continue;
       }
 
