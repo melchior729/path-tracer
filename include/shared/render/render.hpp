@@ -51,7 +51,7 @@ static HOSTDEV Vec3 ray_color(const Ray ray, const SphereBuffer *spheres,
 
     Ray scattered;
     Vec3 attenuation;
-    auto material{materials[record.mat_idx]};
+    const auto &material{materials[record.mat_idx]};
 
     if (!scatters_successfully(incoming, record, material, attenuation,
                                generator, scattered)) {
