@@ -98,6 +98,8 @@ struct BVHTree {
 private:
   size_t open{};
 
+  static constexpr size_t SAH_BUCKETS{12};
+
   constexpr void set_leaf(BVHNode *leaf, const std::vector<Sphere> &spheres,
                           size_t i) {
     leaf->bbox = AABB{spheres[i]};
@@ -147,6 +149,129 @@ private:
     return y_extent >= z_extent ? size_t{1} : size_t{2};
   }
 
+  // Object-median split on the widest centroid axis. Always yields a balanced,
+  // non-degenerate partition, so it is used as the fallback when SAH cannot find
+  // a valid split (e.g. all centroids coincide on every axis).
+  static void median_split(std::vector<Sphere> &spheres, size_t start,
+                           size_t end, size_t &out_axis, size_t &out_mid) {
+    const auto span{end - start};
+    const auto mid{start + span / 2};
+    const auto axis{widest_centroid_axis(spheres, start, end)};
+    std::nth_element(spheres.begin() + static_cast<ptrdiff_t>(start),
+                     spheres.begin() + static_cast<ptrdiff_t>(mid),
+                     spheres.begin() + static_cast<ptrdiff_t>(end),
+                     [axis](const Sphere &a, const Sphere &b) {
+                       return centroid_axis(a, axis) < centroid_axis(b, axis);
+                     });
+    out_axis = axis;
+    out_mid = mid;
+  }
+
+  // Binned Surface Area Heuristic. Bins primitive centroids into SAH_BUCKETS
+  // buckets along each axis, evaluates the SAH cost
+  // (left_count * left_area + right_count * right_area) at every bucket
+  // boundary, and partitions around the cheapest one. Returns false (leaving the
+  // caller to fall back to median_split) when no axis has centroid extent or the
+  // chosen plane fails to separate the primitives.
+  static bool sah_split(std::vector<Sphere> &spheres, size_t start, size_t end,
+                        size_t &out_axis, size_t &out_mid) {
+    constexpr size_t K{SAH_BUCKETS};
+
+    float axis_min[3]{};
+    float axis_extent[3]{};
+
+    float best_cost{INF};
+    size_t best_axis{};
+    size_t best_bucket{};
+    bool found{false};
+
+    for (size_t axis{}; axis < 3; ++axis) {
+      auto cmin{centroid_axis(spheres[start], axis)};
+      auto cmax{cmin};
+      for (auto i{start + 1}; i < end; ++i) {
+        const auto c{centroid_axis(spheres[i], axis)};
+        cmin = std::min(cmin, c);
+        cmax = std::max(cmax, c);
+      }
+
+      const auto extent{cmax - cmin};
+      axis_min[axis] = cmin;
+      axis_extent[axis] = extent;
+      if (extent <= 0.0f) {
+        continue;
+      }
+
+      int counts[K]{};
+      AABB bounds[K]{};
+      for (auto i{start}; i < end; ++i) {
+        auto b{bucket_of(centroid_axis(spheres[i], axis), cmin, extent)};
+        counts[b] += 1;
+        bounds[b] = AABB{bounds[b], AABB{spheres[i]}};
+      }
+
+      AABB suffix_box[K]{};
+      int suffix_count[K]{};
+      AABB acc_box{};
+      int acc_count{};
+      for (size_t i{K}; i-- > 0;) {
+        acc_box = AABB{acc_box, bounds[i]};
+        acc_count += counts[i];
+        suffix_box[i] = acc_box;
+        suffix_count[i] = acc_count;
+      }
+
+      AABB left_box{};
+      int left_count{};
+      for (size_t i{}; i + 1 < K; ++i) {
+        left_box = AABB{left_box, bounds[i]};
+        left_count += counts[i];
+        const auto right_count{suffix_count[i + 1]};
+        if (left_count == 0 || right_count == 0) {
+          continue;
+        }
+
+        const auto cost{
+            static_cast<float>(left_count) * left_box.surface_area() +
+            static_cast<float>(right_count) * suffix_box[i + 1].surface_area()};
+        if (cost < best_cost) {
+          best_cost = cost;
+          best_axis = axis;
+          best_bucket = i;
+          found = true;
+        }
+      }
+    }
+
+    if (!found) {
+      return false;
+    }
+
+    const auto cmin{axis_min[best_axis]};
+    const auto extent{axis_extent[best_axis]};
+    const auto begin{spheres.begin()};
+    const auto mid_it{std::partition(
+        begin + static_cast<ptrdiff_t>(start),
+        begin + static_cast<ptrdiff_t>(end), [&](const Sphere &s) {
+          return bucket_of(centroid_axis(s, best_axis), cmin, extent) <=
+                 best_bucket;
+        })};
+
+    const auto mid{static_cast<size_t>(mid_it - begin)};
+    if (mid == start || mid == end) {
+      return false;
+    }
+
+    out_axis = best_axis;
+    out_mid = mid;
+    return true;
+  }
+
+  static size_t bucket_of(float centroid, float cmin, float extent) {
+    auto b{static_cast<size_t>(static_cast<float>(SAH_BUCKETS) *
+                               ((centroid - cmin) / extent))};
+    return b >= SAH_BUCKETS ? SAH_BUCKETS - 1 : b;
+  }
+
   int fill_tree(std::vector<Sphere> &spheres, size_t start, size_t end) {
     auto i{open++};
     auto node{root + i};
@@ -157,14 +282,11 @@ private:
       return i;
     }
 
-    auto mid{start + span / 2};
-    auto axis{widest_centroid_axis(spheres, start, end)};
-    std::nth_element(spheres.begin() + static_cast<ptrdiff_t>(start),
-                     spheres.begin() + static_cast<ptrdiff_t>(mid),
-                     spheres.begin() + static_cast<ptrdiff_t>(end),
-                     [axis](const Sphere &a, const Sphere &b) {
-                       return centroid_axis(a, axis) < centroid_axis(b, axis);
-                     });
+    size_t axis{};
+    size_t mid{};
+    if (!sah_split(spheres, start, end, axis, mid)) {
+      median_split(spheres, start, end, axis, mid);
+    }
 
     auto left{fill_tree(spheres, start, mid)};
     auto right{fill_tree(spheres, mid, end)};

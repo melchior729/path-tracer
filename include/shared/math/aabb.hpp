@@ -37,6 +37,13 @@ struct AABB {
     return (n == 1) ? y : (n == 2) ? z : x;
   }
 
+  constexpr HOSTDEV float surface_area() const {
+    const auto dx{x.size()};
+    const auto dy{y.size()};
+    const auto dz{z.size()};
+    return 2.0f * (dx * dy + dy * dz + dz * dx);
+  }
+
   static HOSTDEV bool is_valid_interval(float t0, float t1,
                                         Interval &interval) {
     if (t1 <= t0) {
