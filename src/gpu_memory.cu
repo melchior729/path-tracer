@@ -3,10 +3,11 @@
 #include "shared/base/state.hpp"
 #include <curand_kernel.h>
 
-static __global__ void init_gpu_sphere_buffer(SphereBuffer *spheres, float *d_x,
-                                              float *d_y, float *d_z,
-                                              float *d_r, size_t *d_m,
-                                              size_t size) {
+static __global__ void
+init_gpu_sphere_buffer(SphereBuffer *__restrict__ spheres,
+                       float *__restrict__ d_x, float *__restrict__ d_y,
+                       float *__restrict__ d_z, float *__restrict__ d_r,
+                       size_t *__restrict__ d_m, size_t size) {
   spheres->center_x = d_x;
   spheres->center_y = d_y;
   spheres->center_z = d_z;
@@ -15,8 +16,8 @@ static __global__ void init_gpu_sphere_buffer(SphereBuffer *spheres, float *d_x,
   spheres->size = size;
 }
 
-static __global__ void init_bvh_tree(BVHTree *tree, BVHNode *root,
-                                     size_t size) {
+static __global__ void init_bvh_tree(BVHTree *__restrict__ tree,
+                                     BVHNode *__restrict__ root, size_t size) {
   tree->root = root;
   tree->size = size;
 }
@@ -94,7 +95,7 @@ void copy_cam_to_gpu(Camera *d_c, const Camera *c) {
   CUDA_CHECK(cudaMemcpy(d_c, c, sizeof(Camera), cudaMemcpyHostToDevice));
 }
 
-static __global__ void rng_init(curandState *rng, size_t seed) {
+static __global__ void rng_init(curandState *__restrict__ rng, size_t seed) {
   size_t x{blockDim.x * blockIdx.x + threadIdx.x};
   size_t y{blockDim.y * blockIdx.y + threadIdx.y};
   size_t i{y * WIDTH + x};

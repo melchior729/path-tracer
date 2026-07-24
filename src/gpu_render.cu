@@ -4,9 +4,12 @@
 #include "shared/render/render.hpp"
 #include <curand_kernel.h>
 
-__global__ void render_kernel(const Camera *camera, const SphereBuffer *spheres,
-                              const Material *materials, FrameBuffer *buffer,
-                              const BVHTree *tree, curandState *generator) {
+__global__ void render_kernel(const Camera *__restrict__ camera,
+                              const SphereBuffer *__restrict__ spheres,
+                              const Material *__restrict__ materials,
+                              FrameBuffer *__restrict__ buffer,
+                              const BVHTree *__restrict__ tree,
+                              curandState *__restrict__ generator) {
   size_t x{blockDim.x * blockIdx.x + threadIdx.x};
   size_t y{blockDim.y * blockIdx.y + threadIdx.y};
   if (x >= WIDTH || y >= HEIGHT) {
