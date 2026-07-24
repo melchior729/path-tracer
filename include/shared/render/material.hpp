@@ -63,7 +63,10 @@ struct Dielectric {
   constexpr static float reflectance(float cos, float r_i) {
     auto r0{(1 - r_i) / (1 + r_i)};
     r0 *= r0;
-    return r0 + (1 - r0) * std::pow(1 - cos, 5);
+
+    // pow is too slow
+    return r0 + (1 - r0) *
+                    ((1 - cos) * (1 - cos) * (1 - cos) * (1 - cos) * (1 - cos));
   }
 };
 

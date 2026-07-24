@@ -11,7 +11,7 @@ profile: build
                  --output=profiling/profiling-result ./build/main
 
 build: clean
-    cmake -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
     cmake --build build/
     ln -sf build/compile_commands.json .
 
