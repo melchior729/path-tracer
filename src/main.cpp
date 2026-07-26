@@ -1,4 +1,5 @@
 #define SDL_MAIN_USE_CALLBACKS 1
+#define LOGGING_ENABLED 1
 
 #include "SDL3/SDL_main.h"
 #include "SDL3/SDL_timer.h"
@@ -69,6 +70,12 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
       break;
     case SDLK_F:
       state->cpu.camera->move_y(-speed);
+      break;
+    case SDLK_U:
+      state->cpu.camera->move_look_y(speed);
+      break;
+    case SDLK_J:
+      state->cpu.camera->move_look_y(-speed);
       break;
     case SDLK_H:
       state->cpu.camera->move_to_origin();
@@ -143,6 +150,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
   int pitch{};
 
   if (SDL_LockTexture(state->texture.get(), NULL, &pixels, &pitch)) {
+    // want to write to the address of where its coming from
+    // this is cpu's buffer @ pixels.
+
     std::memcpy(pixels, &(state->cpu.buffer->pixels),
                 static_cast<size_t>(pitch) * HEIGHT);
     SDL_UnlockTexture(state->texture.get());

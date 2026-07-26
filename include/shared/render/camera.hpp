@@ -45,6 +45,12 @@ struct Camera {
 
   constexpr void move_z(float z) { center.z() += z; }
 
+  constexpr void move_look_x(float x) { look_at.x() += x; }
+
+  constexpr void move_look_y(float y) { look_at.y() += y; }
+
+  constexpr void move_look_z(float z) { look_at.z() += z; }
+
   constexpr void move_to_origin() { this->center = {0, 0, 0}; }
 
   constexpr void look_neg_z() { this->look_at = {0, 0, -1000}; }
